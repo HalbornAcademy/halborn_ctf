@@ -178,10 +178,10 @@ class Web3GenericChallenge(GenericChallenge):
     ##################################
 
     def _register_flask_paths(self):
-        super()._pre_run()
-        self._add_endpoint('/files', 'files', self._app_files_handler)
-        self._add_endpoint('/solved', 'solved', self._app_solved_handler)
-        self._add_endpoint('/', 'info', self._app_info_handler)
+        super()._register_flask_paths()
+        self._app.add_url_rule('/files', 'files', self._app_files_handler, methods=['GET'])
+        self._app.add_url_rule('/solved', 'solved', self._app_solved_handler, methods=['GET'])
+        self._app.add_url_rule('/', 'info', self._app_info_handler, methods=['GET'])
 
 
     def __init__(self) -> None:
