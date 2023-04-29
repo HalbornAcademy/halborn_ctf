@@ -52,7 +52,7 @@ class GenericChallenge(ABC):
         CORS(self._app)
 
         self.state = State({})
-        self.state.path_mapping = {}
+        self.path_mapping = {}
         self.state.private = State({})
 
         self.log = logging.getLogger('challenge')
@@ -90,7 +90,7 @@ class GenericChallenge(ABC):
         return _handler
         
     def _register_challenge_paths(self):
-        for i, values in enumerate(self.state.path_mapping.items()):
+        for i, values in enumerate(self.path_mapping.items()):
             path, path_data = values
             methods = path_data.get('methods', ['GET'])
             # TODO: Verify methods and path_data
