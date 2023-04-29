@@ -40,7 +40,7 @@ _logger = logging.getLogger(__name__)
 # executable/script.
 
 
-def parse_args(args):
+def _parse_args(args):
     """Parse command line parameters
 
     Args:
@@ -78,13 +78,14 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def setup_logging(loglevel):
+def _setup_logging(loglevel):
     """Setup basic logging
 
     Args:
       loglevel (int): minimum loglevel for emitting messages
     """
-    logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
+    # logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
+    logformat = "%(asctime)s | %(name)s | %(funcName)s | %(levelname)s | %(message)s"
     logging.basicConfig(
         level=loglevel, stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S"
     )
@@ -100,17 +101,14 @@ def main(args):
       args (List[str]): command line parameters as list of strings
           (for example  ``["--verbose", "42"]``).
     """
-    args = parse_args(args)
+    args = _parse_args(args)
     _path = os.path.dirname(os.path.abspath(args.file))
     sys.path.append(_path)
     from challenge import Challenge
     c = Challenge()
-    setup_logging(args.loglevel)
+    _setup_logging(args.loglevel)
     _method = getattr(c, '_'+args.method)
     _method()
-    # _logger.debug("Starting crazy calculations...")
-    # print(f"The {args.n}-th Fibonacci number is {fib(args.n)}")
-    # _logger.info("Script ends here")
 
 
 def run():

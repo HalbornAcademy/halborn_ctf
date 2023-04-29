@@ -24,7 +24,15 @@ class _PeriodicFunction():
     def stop(self):
         self.stopped = True
 
-def periodic(*, every):
+def periodic(*, every: int):
+    """It allows executing a function as a periodic function in a thread on the background.
+
+    Args:
+        every (int): The amount of seconds to wait to execute the function again. It should be bigger than 0.
+
+    Raises:
+        ValueError: If the ``every`` parameter is set to 0.
+    """
     def decorator(function):
         return _PeriodicFunction(function, every=every)
     return decorator
