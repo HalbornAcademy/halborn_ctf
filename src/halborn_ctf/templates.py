@@ -8,6 +8,7 @@ import zipfile
 import json
 from io import BytesIO
 import glob
+import pickle
 import signal
 from urllib.parse import urljoin
 
@@ -30,6 +31,8 @@ class _CleanChildProcesses:
         #           process is already a process group leader.
 
   def __exit__(self, type, value, traceback):
+    logging.info('Killing all processes')
+
     try:
       os.killpg(0, signal.SIGINT) # kill all processes in my group
     except KeyboardInterrupt:
@@ -37,6 +40,7 @@ class _CleanChildProcesses:
       # Ignore it so that the existing exception, if any, is returned. This
       # leaves us with a clean exit code if there was no exception.
       pass
+
 
 class GenericChallenge(ABC):
 
@@ -100,27 +104,21 @@ class GenericChallenge(ABC):
     def _register_flask_paths(self):
         pass
 
-    def _pre_run(self):
-        pass
-
     def _build(self):
         with _CleanChildProcesses():
             self.build()
-            with open('state.json', 'w') as f:
-                json.dump(self.state, f)
-            logging.info('Killing all processes')
+
+            f = open('state.dump', 'bw')
+            pickle.dump(self.state, f)
 
     def _run(self):
         with _CleanChildProcesses():
-            self._pre_run()
 
-            f = open('state.json', 'r')
-            self.state = State(json.load(f))
+            f = open('state.dump', 'br')
+            self.state = pickle.load(f)
 
             self._register_flask_paths()
             self._register_challenge_paths()
-
-            self._pre_run()
 
             self.run()
 
@@ -183,10 +181,6 @@ class Web3GenericChallenge(GenericChallenge):
         self._add_endpoint('/solved', 'solved', self._app_solved_handler)
         self._add_endpoint('/', 'info', self._app_info_handler)
 
-
-    def _pre_run(self):
-        super()._pre_run()
-        self.state.private = State(self.state.private)
 
     def __init__(self) -> None:
         super().__init__()
