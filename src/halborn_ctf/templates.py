@@ -61,16 +61,18 @@ class GenericChallenge(ABC):
 
         port = path_data['port']
         host = path_data.get('host', '127.0.0.1')
-        proxy_path = path_data.get('path', '/') + '/' # Important to add the final '/'
+        proxy_path = path_data.get('path', '/')
 
         def _handler(**kwargs):
 
-            full_path = urljoin(proxy_path, kwargs.get('path', ''))
+            # Important to add the final '/'
+            full_path = urljoin(proxy_path, '/' + kwargs.get('path', ''))
+            full_url = f'http://{host}:{port}{full_path}'
 
             try:
                 resp = requests.request(
                     method=request.method,
-                    url=f'http://{host}:{port}{full_path}',
+                    url=full_url,
                     headers={key: value for (key, value)
                             in request.headers if key != 'Host'},
                     data=request.get_data(),
@@ -88,7 +90,7 @@ class GenericChallenge(ABC):
                 return Response("Could not connect with server on port {}".format(None), 503)
 
         return _handler
-        
+
     def _register_challenge_paths(self):
         for i, values in enumerate(self.path_mapping.items()):
             path, path_data = values
@@ -98,7 +100,7 @@ class GenericChallenge(ABC):
 
     def _flask_run(self):
         self._app.run(host='0.0.0.0', port=os.environ.get('PORT', 8080), use_reloader=False, debug=False)
-    
+
     #######################################
 
     def _register_flask_paths(self):
@@ -153,14 +155,14 @@ class Web3GenericChallenge(GenericChallenge):
         return flask.send_file(memory_file,
                         download_name=fileName,
                         as_attachment=True)
-    
-    
+
+
     def _app_info_handler(self):
 
         def without_keys(d, keys):
             return {k: v for k, v in d.items() if k not in keys}
         return without_keys(self.state, ['private', 'solved'])
-    
+
     def _app_solved_handler(self):
         if self.state.ready:
             return Response("Challenge not ready", status=503)
@@ -172,7 +174,7 @@ class Web3GenericChallenge(GenericChallenge):
             }
 
         return response
-    
+
     ##################################
 
     def _register_flask_paths(self):
@@ -188,7 +190,7 @@ class Web3GenericChallenge(GenericChallenge):
         self.state.solved = False
         self.ready = False
         self.state.private = State({})
-    
+
 
 
     @abstractmethod
