@@ -5,7 +5,7 @@ from flask import Response, request
 import requests
 import os
 import zipfile
-import json
+import sys
 from io import BytesIO
 import glob
 import pickle
@@ -48,6 +48,8 @@ class GenericChallenge(ABC):
         super().__init__()
 
         self._app = flask.Flask('Challenge')
+
+
 
         CORS(self._app)
 
@@ -99,6 +101,9 @@ class GenericChallenge(ABC):
             self._app.add_url_rule(path, 'mapping-{}'.format(i), self._generic_path_handler(path, path_data), methods=methods)
 
     def _flask_run(self):
+        cli = sys.modules['flask.cli']
+        cli.show_server_banner = lambda *x: None
+
         self._app.run(host='0.0.0.0', port=os.environ.get('PORT', 8080), use_reloader=False, debug=False)
 
     #######################################
