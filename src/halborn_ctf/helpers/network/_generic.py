@@ -10,12 +10,14 @@ __all__ = [
 
 def wait_for_port(port: int, host: str = 'localhost', timeout: float = 5.0):
     """Wait until a port starts accepting TCP connections.
+
     Args:
-        port: Port number.
-        host: Host address on which the port should exist.
-        timeout: In seconds. How long to wait before raising errors.
+        port (int): The port to wait for
+        host (str, optional): The host where the port should be waited for. Defaults to 'localhost'.
+        timeout (float, optional): The amount in seconds to wait for before exiting. Defaults to 5.0.
+
     Raises:
-        TimeoutError: The port isn't accepting connection after time specified in `timeout`.
+        TimeoutError: The port isn't accepting connection after time specified in ``timeout``.
     """
     _logger.info('Waiting for port on "{}:{}"'.format(host, port))
     start_time = time.perf_counter()
@@ -27,5 +29,4 @@ def wait_for_port(port: int, host: str = 'localhost', timeout: float = 5.0):
         except OSError as ex:
             time.sleep(0.01)
             if time.perf_counter() - start_time >= timeout:
-                _logger.error('Waited too long for the port "{}" on host "{}" to start accepting connections.'.format(port, host))
-                break
+                TimeoutError('Waited too long for port "{}" on host "{}" to start accepting connections.'.format(port, host))

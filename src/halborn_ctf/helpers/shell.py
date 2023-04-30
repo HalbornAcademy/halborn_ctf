@@ -17,6 +17,11 @@ def run(cmd: str, *, background=False, capture_output=False, **kwargs):
             print(stdout)
             print(stderr)
 
+        Example of installing ``forge`` in the ``/usr`` directory::
+
+            run('curl -L https://foundry.paradigm.xyz | bash', env={"FOUNDRY_DIR": '/usr'})
+            run('foundryup', env={"FOUNDRY_DIR": '/usr'})
+
         Example of executing ``anvil`` in the background as a none blocking process::
 
             run("anvil -p 8545", background_process=True)
