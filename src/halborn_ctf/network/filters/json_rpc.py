@@ -4,9 +4,13 @@ from ._json_rpc import filter_json_rpc_method
 from  ._utils import run_script
 
 def whitelist_methods(methods=[], *, listen_port, to_port, to_host='127.0.0.1'):
-    """Allows whitelisting a JSON RPC method from a given list
+    """Proxy filter that allows whitelisting a JSON RPC method
 
-    If the method is not whitelisted the following data will be send::
+    The proxy will expose a service that will be listening on ``listen_port`` and redirect
+    all traffic to ``to_host:to_port``.
+
+    Each request will be checked for a valid method and if the method is not whitelisted 
+    the following data will be send::
 
         {
             "jsonrpc": "2.0",
@@ -17,11 +21,19 @@ def whitelist_methods(methods=[], *, listen_port, to_port, to_host='127.0.0.1'):
             }
         }
 
+    Example:
+
+        The ``methods`` parameter does support regex on each of the elements::
+
+            # Allowing all methods starting with `eth_` and `net_`
+            whitelist_methods(["eth_.*", "net_.*"], listen_port=8545, to_port=8546)
+
     Args:
-        listen_port (_type_): _description_
-        to_port (_type_): _description_
-        methods (list, optional): _description_. Defaults to [].
-        to_host (str, optional): _description_. Defaults to '127.0.0.1'.
+        methods (list, optional): A list of methods to whitelist. Each element of the 
+            list does support regex expressions to match multiple patterns. Example: ``["eth_.*"]``. Defaults to [].
+        listen_port (int): The port that will expose the proxy filter server 
+        to_port (int): The port that all traffic will be redirected to 
+        to_host (str, optional): The host that all traffic will be redirected to. Defaults to '127.0.0.1'.
     """
     run_script(whitelist_json_rpc_method.__file__, **locals())
 
