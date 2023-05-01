@@ -85,9 +85,36 @@ class GenericChallenge(ABC):
     """
 
     CHALLENGE_NAME = os.environ.get('CHALLENGE_NAME', 'challenge')
+    """
+    (str): The name of the challenge.
+    """
     FLAG_TYPE = FlagType.NONE
+    """
+    (FlagType): The type of flag. Set to :obj:`FlagType.NONE` if using a solver unless using manual flag input on the CTF platform.
+    """
     HAS_FILES = False
+    """
+    (bool): If the challenge has downloadable files. A "files" function must be defined returning a list of files that
+    will be downloable from the challenge container. Glob patterns can be used (:mod:`glob`)::
+
+        def files(self):
+            return [
+                "challenge.py",
+                "filter.py",
+                "folder/test.sol",
+                "folder2/**",
+                "folder3/*.sol",
+            ]
+    """
     HAS_SOLVER = False
+    """
+    (bool): If the challenge has a solver. The required function "solved" should be present. Although it is possible
+    to have periodic functions (:obj:`periodic`) that set the ``solved`` under :py:attr:`GenericChallenge.state`.
+    You can keep the method defined like this if the latter is being used::
+
+        def solved(self):
+            pass
+    """
 
     def __init__(self) -> None:
         super().__init__()
