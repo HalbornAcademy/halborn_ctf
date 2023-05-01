@@ -63,8 +63,14 @@ class MappingInfo(TypedDict):
 
 class FlagType(Enum):
     NONE = 0
+    """If no flag is present
+    """
     STATIC = 1
+    """If the flag is statically defined or embedded into the challenge somewhere.
+    """
     DYNAMIC = 2
+    """If the flag is dynamically defined by using "env['FLAG']".
+    """
 
 class GenericChallenge(ABC):
     """Generic CTF challenge template
@@ -80,7 +86,16 @@ class GenericChallenge(ABC):
     this attribute can be used to store anything that would be used across the different functions. The `state.public` attribute will be exposed
     under the `/state` path on the challenge domain.
 
-    Attributes:
+    The following routes will be exposed:
+
+    - ``/state``: Does contain general info of the challenge such as :obj:`ready` and :obj:`public`.
+    - ``/solved``: Does execute the "solved" function and display if the challenge was solved together with a solved message or hint to the player.
+    Note:
+        Only if :attr:`HAS_SOLVER` == ``True``.
+
+    - ``/files``: Does download the files listed under the "files" function as a zip file named by :attr:`CHALLENGE_NAME`.
+    Note:
+        Only if :attr:`HAS_FILES` == ``True``.
 
     """
 
@@ -105,6 +120,8 @@ class GenericChallenge(ABC):
                 "folder2/**",
                 "folder3/*.sol",
             ]
+    Note:
+        Each time the user request the `/files` route a zip archive with all of the listed files will be downloaded.
     """
     HAS_SOLVER = False
     """
@@ -114,6 +131,9 @@ class GenericChallenge(ABC):
 
         def solved(self):
             pass
+
+    Note:
+        This function will be executed each time the user requests the `/solved` route.
     """
 
     def __init__(self) -> None:
