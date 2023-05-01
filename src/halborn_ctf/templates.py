@@ -394,4 +394,12 @@ class Web3Challenge(GenericChallenge):
 
     @abstractmethod
     def files(self):
+        """Refer to :obj:`HAS_FILES`
+        """
+        pass
+
+    @abstractmethod
+    def solved(self):
+        """Refer to :obj:`HAS_SOLVER`
+        """
         pass
