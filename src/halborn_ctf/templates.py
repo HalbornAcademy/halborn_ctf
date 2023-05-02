@@ -260,7 +260,10 @@ class GenericChallenge(ABC):
 
                 def solver(self):
                     ...
-                    self.solved = True
+                    if self.solved:
+                        self.solved_msg = "You are the best hacker!"
+                    else:
+                        self.solved_msg = "Keep trying :("
 
         """
 
