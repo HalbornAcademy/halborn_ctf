@@ -41,14 +41,7 @@ from .state import State
 
 from abc import ABC, abstractmethod
 
-import socket
-from contextlib import closing
-
-def find_free_port():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
+from .network import find_free_port
 
 # https://stackoverflow.com/questions/320232/ensuring-subprocesses-are-dead-on-exiting-python-program
 class _CleanChildProcesses:
