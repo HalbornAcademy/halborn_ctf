@@ -255,7 +255,7 @@ class GenericChallenge(ABC):
 
     @property
     def solved_msg(self):
-        """(bool) Returns and allows to set a message or hint for the player. Only functional if :obj:`HAS_SOLVER` is set.
+        """(str): Returns and allows to set a message or hint for the player. Only functional if :obj:`HAS_SOLVER` is set.
             Example::
 
                 def solver(self):
