@@ -468,14 +468,20 @@ class GenericChallenge(ABC):
         with _CleanChildProcesses():
             self.build()
 
-            f = open('state.dump', 'bw')
-            pickle.dump(self.state, f)
+            f = open('/tmp/state.dump', 'bw')
+            pickle.dump(self._state, f)
+
+            f = open('/tmp/state_public.dump', 'bw')
+            pickle.dump(self._state_public, f)
 
     def _run(self):
         with _CleanChildProcesses():
 
-            f = open('state.dump', 'br')
+            f = open('/tmp/state.dump', 'br')
             self._state = pickle.load(f)
+
+            f = open('/tmp/state_public.dump', 'br')
+            self._state_public = pickle.load(f)
 
             self._register_flask_paths()
             self._register_challenge_paths()
