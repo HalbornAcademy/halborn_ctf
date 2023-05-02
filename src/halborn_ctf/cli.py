@@ -43,7 +43,7 @@ def _parse_args(args):
     )
     parser.add_argument(dest="method", help="The method to run on the challenge", type=str, metavar="METHOD", choices=['build', 'run'])
     # parser.add_argument(dest="file", help="The file where the challenge is present", type=str, metavar="FILE")
-    parser.add_argument("-c", "--class", help="Class name", default="Challenge")
+    parser.add_argument("-c", "--class", help="Class name", default="Challenge", metavar='class')
     parser.add_argument("-f", "--file", help="File path", default="./challenge.py")
     parser.add_argument(
         "-v",
@@ -85,12 +85,24 @@ def main(args):
 
     """
     args = _parse_args(args)
-    _path = os.path.dirname(os.path.abspath(args.file))
-    sys.path.append(_path)
-    from challenge import Challenge
-    c = Challenge()
+    abs_path = os.path.abspath(args.file)
+    module_name = os.path.splitext(os.path.basename(abs_path))[0]
+    module_path = os.path.dirname(abs_path)
+
+    sys.path.append(module_path)
+
+    module = __import__(module_name)
+
+    _cls = getattr(module, getattr(args, 'class'))
+
     _setup_logging(args.loglevel)
+
+    # Initiation challenge
+    c = _cls()
+
     _method = getattr(c, '_'+args.method)
+
+    # Initiation method
     _method()
 
 
