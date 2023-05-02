@@ -175,7 +175,7 @@ class GenericChallenge(ABC):
 
         if self.HAS_SOLVER:
             self._state._setattr('solved', False)
-            self._state._setattr('solved_msg', False)
+            self._state._setattr('solved_msg', None)
 
         if self.HAS_FILES:
             try:
@@ -304,16 +304,25 @@ class GenericChallenge(ABC):
         if not self.state.ready:
             return Response("Challenge not ready", status=503)
 
-        try:
-            self.solved()
-        except:
-            pass
+        _pre_state = self.state.get('solved', False)
+
+        # If not solved, we check on the solver
+        if not _pre_state:
+            try:
+                self.solved()
+            except Exception as e:
+                self._log.exception(e)
 
         _solved_state = self.state.get('solved', False)
         response = {
-            'solved': _solved_state,
-            'msg': self.state.get('solved_msg', 'Solved' if _solved_state else 'Not solved'),
+            'solved': _solved_state
             }
+
+        _solved_message = self.state.get('solved_msg', None)
+        if _solved_message:
+            response['msg'] = _solved_message
+        else:
+            response['msg'] = 'Solved' if _solved_state else 'Not solved'
 
         if _solved_state and self.FLAG_TYPE == FlagType.DYNAMIC:
             response['flag'] = os.environ.get('FLAG', 'HAL{PLACEHOLDER}')
