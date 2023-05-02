@@ -18,6 +18,8 @@ Creating a challenge consists on the following steps:
 
     halborn_ctf run -vv
 
+- Server can be accessed under ``localhost:8080`` by default.
+
 """
 import logging
 import flask
@@ -104,13 +106,13 @@ class GenericChallenge(ABC):
     the :obj:`path_mapping` attribute.
 
     An attribute named :obj:`state` can be used to store any sort of object that will persiste between the ``build`` and ``run`` steps. Furthermore,
-    this attribute can be used to store anything that would be used across the different functions. The `state.public` attribute will be exposed
+    this attribute can be used to store anything that would be used across the different functions. The `state_public` property will be exposed
     under the `/state` path on the challenge domain.
 
-    The following routes will be exposed:
+    The following routes will be exposed under ``localhost:8080``:
 
-    - ``/state``: Does contain general info of the challenge such as :obj:`ready` and :obj:`public`.
-    - ``/solved``: Does execute the "solved" function and display if the challenge was solved together with a solved message or hint to the player.
+    - ``/state``: Does contain general info of the challenge such as :obj:`ready` and :obj:`state_public`.
+    - ``/solved``: Does execute the "solver" function and display if the challenge was solved together with a solved message or hint to the player.
 
     Note:
         Only if :attr:`HAS_SOLVER` == ``True``.
@@ -148,11 +150,11 @@ class GenericChallenge(ABC):
     """
     HAS_SOLVER = False
     """
-    (bool): If the challenge has a solver. The required function "solved" should be present. Although it is possible
-    to have periodic functions (:obj:`periodic`) that set the ``solved`` under :py:attr:`GenericChallenge.state`.
+    (bool): If the challenge has a solver. The required function "solver" should be present. Although it is possible
+    to have periodic functions (:obj:`periodic`) that set the :obj:`solved`.
     You can keep the method defined like this if the latter is being used::
 
-        def solved(self):
+        def solver(self):
             pass
 
     Note:
@@ -167,15 +169,20 @@ class GenericChallenge(ABC):
 
         CORS(self._app)
 
+        self._ready = False
         self._state_set = False
-        self._state = State({
-            'public': State({}),
-            'ready': False,
-        })
+        self._state = State({})
+        self._state_public = State({})
+
+        #     'public': State({}),
+        #     'ready': False,
+        # })
 
         if self.HAS_SOLVER:
-            self._state._setattr('solved', False)
-            self._state._setattr('solved_msg', None)
+            self._solved = False
+            self._solved_msg = None
+            # self._state._setattr('solved', False)
+            # self._state._setattr('solved_msg', None)
 
         if self.HAS_FILES:
             try:
@@ -191,13 +198,13 @@ class GenericChallenge(ABC):
 
         if self.HAS_SOLVER:
             try:
-                getattr(self, 'solved')
+                getattr(self, 'solver')
             except:
-                raise NotImplementedError('Missing function "solved" (HAS_SOLVER == True)')
+                raise NotImplementedError('Missing function "solver" (HAS_SOLVER == True)')
         else:
             try:
-                getattr(self, 'solved')
-                raise NotImplementedError('Remove "solved" function (HAS_SOLVER == False)')
+                getattr(self, 'solver')
+                raise NotImplementedError('Remove "solver" function (HAS_SOLVER == False)')
             except:
                 pass
 
@@ -205,6 +212,66 @@ class GenericChallenge(ABC):
             raise ValueError("HAS_SOLVER == False and FLAG_TYPE == NONE")
 
         self._path_mapping: dict[str, MappingInfo] = {}
+
+    @property
+    def ready(self):
+        """(bool): Allows setting the challenge as ready to be played.
+
+            Example::
+
+                def run(self):
+                    ...
+                    self.ready = True
+
+        """
+        return self._ready
+
+    @ready.setter
+    def ready(self, value):
+        # if self._ready:
+        #     raise ValueError('Challenge ready already')
+        self._ready = value
+
+    @property
+    def solved(self):
+        """(bool): Returns and allows to set if the challenge is solved or not. Only functional if :obj:`HAS_SOLVER` is set.
+
+            Example::
+
+                def solver(self):
+                    ...
+                    self.solved = True
+
+        """
+
+        if not self.HAS_SOLVER:
+            raise ValueError('Challenge !HAS_SOLVER')
+
+    @solved.setter
+    def solved(self, value):
+        if not self.HAS_SOLVER:
+            raise ValueError('Challenge !HAS_SOLVER')
+        self._solved = value
+
+    @property
+    def solved_msg(self):
+        """(bool) Returns and allows to set a message or hint for the player. Only functional if :obj:`HAS_SOLVER` is set.
+            Example::
+
+                def solver(self):
+                    ...
+                    self.solved = True
+
+        """
+
+        if not self.HAS_SOLVER:
+            raise ValueError('Challenge !HAS_SOLVER')
+
+    @solved_msg.setter
+    def solved_msg(self, value):
+        if not self.HAS_SOLVER:
+            raise ValueError('Challenge !HAS_SOLVER')
+        self._solved_msg = value
 
     @property
     def path_mapping(self):
@@ -261,18 +328,24 @@ class GenericChallenge(ABC):
                 print(self.state.custom)
                 # Changed value
 
-
-        Attributes:
-            public (State): It will expose the state content into the challenge `/state` route.
-            ready (bool): If the challenge is ready to be played.
-            solved (bool): Only present if :obj:`HAS_SOLVER` is set. It does allow setting the challenge as solved
-            solved_msg (str): Only present if :obj:`HAS_SOLVER` is set. It does allow setting a "clue" or info message to the player
-
         """
         return self._state
 
     @state.setter
     def state(self, value):
+        if self._state_set:
+            raise ValueError("State already set, use state.update instead")
+        self._state._merge(value)
+        self._state_set = True
+
+    @property
+    def state_public(self):
+        """(State): It will expose the state content into the challenge ``/state`` route. Refer to :obj:`state`.
+        """
+        return self._state_public
+
+    @state_public.setter
+    def state_public(self, value):
         if self._state_set:
             raise ValueError("State already set, use state.update instead")
         self._state._merge(value)
@@ -313,7 +386,7 @@ class GenericChallenge(ABC):
         # If not solved, we check on the solver
         if not _pre_state:
             try:
-                self.solved()
+                self.solver()
             except Exception as e:
                 self._log.exception(e)
 
@@ -455,7 +528,7 @@ class Web3Challenge(GenericChallenge):
         pass
 
     @abstractmethod
-    def solved(self):
+    def solver(self):
         """Refer to :obj:`HAS_SOLVER`
         """
         pass
