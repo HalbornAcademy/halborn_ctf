@@ -195,8 +195,6 @@ We can create a file as a test to be exposed with the challenge:
 
 If we now try to access the server at ``/files`` (http://127.0.0.1:8080/files) a ``MY_CHALLENGE.zip`` file will be downloaded. The name is taken from ``CHALLENGE_NAME``. The content of the file should include the ``test.txt`` and the ``challenge.py`` file itself.
 
-.. _periodic-solver:
-
 Working with the state
 ----------------------
 
