@@ -124,7 +124,7 @@ class GenericChallenge(ABC):
 
     """
 
-    CHALLENGE_NAME = os.environ.get('CHALLENGE_NAME', 'challenge')
+    CHALLENGE_NAME = 'challenge'
     """ (str): The name of the challenge.
     """
 
@@ -138,7 +138,6 @@ class GenericChallenge(ABC):
 
         def files(self):
             return [
-                "challenge.py",
                 "filter.py",
                 "folder/test.sol",
                 "folder2/**",
@@ -165,13 +164,14 @@ class GenericChallenge(ABC):
         super().__init__()
 
         self._app = flask.Flask('Challenge')
-        self._log = logging.getLogger('GenericChallenge')
+        self.log = logging.getLogger(self.CHALLENGE_NAME)
 
         CORS(self._app)
 
         self._ready = False
         self._state_set = False
         self._state = State({})
+        self._state_public_set = False
         self._state_public = State({})
 
         #     'public': State({}),
@@ -246,6 +246,7 @@ class GenericChallenge(ABC):
 
         if not self.HAS_SOLVER:
             raise ValueError('Challenge !HAS_SOLVER')
+        return self._solved
 
     @solved.setter
     def solved(self, value):
@@ -339,6 +340,7 @@ class GenericChallenge(ABC):
         if self._state_set:
             raise ValueError("State already set, use state.update instead")
         self._state._merge(value)
+        # self._state = State(value)
         self._state_set = True
 
     @property
@@ -349,10 +351,11 @@ class GenericChallenge(ABC):
 
     @state_public.setter
     def state_public(self, value):
-        if self._state_set:
-            raise ValueError("State already set, use state.update instead")
-        self._state._merge(value)
-        self._state_set = True
+        if self._state_public_set:
+            raise ValueError("State already set, use state_public.update instead")
+        self._state_public._merge(value)
+        # self._state_public_set = State(value)
+        self._state_public_set = True
 
     def _app_info_handler(self):
         if not self.ready:
@@ -392,7 +395,7 @@ class GenericChallenge(ABC):
             try:
                 self.solver()
             except Exception as e:
-                self._log.exception(e)
+                self.log.exception(e)
 
         response = {
             'solved': self.solved
@@ -478,10 +481,13 @@ class GenericChallenge(ABC):
         with _CleanChildProcesses():
 
             f = open('/tmp/state.dump', 'br')
-            self._state = pickle.load(f)
+            tmp = pickle.load(f)
+            self._state._merge(tmp)
 
             f = open('/tmp/state_public.dump', 'br')
-            self._state_public = pickle.load(f)
+            # TODO: Do a merge instead of replace
+            tmp = pickle.load(f)
+            self._state_public._merge(tmp)
 
             self._register_flask_paths()
             self._register_challenge_paths()

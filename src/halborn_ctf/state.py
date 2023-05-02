@@ -55,7 +55,7 @@ class State(dict):
         for k in _dict.keys():
             if type(_dict[k]) == dict:
                 _dict[k] = State(_dict[k])
-        super(State,self).__init__(*args, **kw)
+        super(State,self).__init__(_dict)
 
     def __getattr__(self, key):
         return self.get(key, None)
