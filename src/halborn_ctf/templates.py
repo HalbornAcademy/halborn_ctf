@@ -34,12 +34,21 @@ import glob
 import pickle
 import signal
 from urllib.parse import urljoin
-from typing import TypedDict, NotRequired
+from typing import TypedDict, NotRequired, Callable
 from enum import Enum
 
 from .state import State
 
 from abc import ABC, abstractmethod
+
+import socket
+from contextlib import closing
+
+def find_free_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
 
 # https://stackoverflow.com/questions/320232/ensuring-subprocesses-are-dead-on-exiting-python-program
 class _CleanChildProcesses:
@@ -66,22 +75,38 @@ class _CleanChildProcesses:
       # leaves us with a clean exit code if there was no exception.
       pass
 
+class MappingInfoFilter(TypedDict):
+    """Dictionary data type to store the details for a filter used on a mapping.
+    """
+
+    method: Callable
+    """ (Callable): The function that runs the filter.
+    """
+    args: NotRequired[list]
+    """ (list, optional): The list of arguments for the filter function.
+    """
+    kwargs: NotRequired[str]
+    """ (dict, optional): The kwargs for the filter function, only used by default on custom filters and will be passed on the script inside ``ctx.options.[HERE]``.
+    """
 
 class MappingInfo(TypedDict):
     """Dictionary data type to store the details for a path mapping
     """
 
     port: int
-    """ port (int): The port to redirect to.
+    """ (int): The port to redirect to.
     """
     host: NotRequired[str]
-    """ host (str): The host to redirect to. Defaults to ``'127.0.0.1'``.
+    """ (str, optional): The host to redirect to. Defaults to ``'127.0.0.1'``.
     """
     path: NotRequired[str]
-    """ path (str): The path to redirect to. Defaults to ``'/'``.
+    """ (str, optional): The path to redirect to. Defaults to ``'/'``.
     """
     methods: list[str]
-    """ methods (list[str]): The allowd methods. Defaults to ``["GET"]``.
+    """ (list[str], optional): The allowed methods. Defaults to ``["GET"]``.
+    """
+    filter: NotRequired[MappingInfoFilter]
+    """ (MappingInfoFilter, optional): Information containing a filter to execute.
     """
 
 class FlagType(Enum):
@@ -103,7 +128,7 @@ class GenericChallenge(ABC):
     to deploy a new challenge.
 
     This template does also expose the challenge by using an HTTP server. The server does allow registering routes to it by using
-    the :obj:`path_mapping` attribute.
+    the :obj:`PATH_MAPPING` attribute.
 
     An attribute named :obj:`state` can be used to store any sort of object that will persiste between the ``build`` and ``run`` steps. Furthermore,
     this attribute can be used to store anything that would be used across the different functions. The `state_public` property will be exposed
@@ -160,6 +185,61 @@ class GenericChallenge(ABC):
         This function will be executed each time the user requests the `/solved` route.
     """
 
+    PATH_MAPPING = {}
+    """
+    (dict[str, MappingInfo]): Mapping used internally to register the challenge URL's paths.
+    It does contain a mapping of ``path`` to ``MappingInfo`` dictionary details.
+
+    Example:
+        Have the challenge ``/`` path expose the anvil service which is running internally on port ``8545``::
+
+            PATH_MAPPING = {
+                '/': {
+                        'host': '127.0.0.1', # optional. Defaults to '127.0.0.1'
+                        'port': 8545,
+                        'path': '/', # optional. Defaults to '/'
+                        'methods': ['POST'] # optional. Defaults to ['GET']
+                }
+            }
+
+        A request to http://challenge/ will be proxied to http://127.0.0.1:8545/
+
+        Redirect all request to the service running on port ``9999`` and under ``/service``::
+
+            PATH_MAPPING = {
+                '/<path:path>': {
+                        'port': 9999,
+                        'path': '/service',
+                        'methods': ['GET', 'POST', 'HEAD']
+                }
+            }
+
+        A request to http://challenge/my_path/file will be proxied to http://127.0.0.1:9999/service/my_path/file. But not http://challenge/.
+
+        It allows to use filters::
+
+            PATH_MAPPING = {
+                '/': {
+                        'port': 8545,
+                        'path': '/',
+                        'methods': ['POST'],
+                        'filter': {
+                            'method': network.filters.json_rpc.filter_methods,
+                            'args': [],
+
+                            # Custom filter
+                            # 'method': network.filters.run_script,
+                            # 'args': ['filter.py'],
+                            # 'kwargs': {}
+                        }
+                }
+            }
+
+    Note:
+        There is no need to specify any of the required field for the filter such as ``listen_port``, ``to_port``, ``to_host`` as those will
+        be extracted from the mapping itself and a random listening port used and remapped.
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -213,24 +293,24 @@ class GenericChallenge(ABC):
 
         self._path_mapping: dict[str, MappingInfo] = {}
 
-    @property
-    def ready(self):
-        """(bool): Allows setting the challenge as ready to be played.
+    # @property
+    # def ready(self):
+    #     """(bool): Allows setting the challenge as ready to be played.
 
-            Example::
+    #         Example::
 
-                def run(self):
-                    ...
-                    self.ready = True
+    #             def run(self):
+    #                 ...
+    #                 self.ready = True
 
-        """
-        return self._ready
+    #     """
+    #     return self._ready
 
-    @ready.setter
-    def ready(self, value):
-        # if self._ready:
-        #     raise ValueError('Challenge ready already')
-        self._ready = value
+    # @ready.setter
+    # def ready(self, value):
+    #     # if self._ready:
+    #     #     raise ValueError('Challenge ready already')
+    #     self._ready = value
 
     @property
     def solved(self):
@@ -276,39 +356,6 @@ class GenericChallenge(ABC):
         if not self.HAS_SOLVER:
             raise ValueError('Challenge !HAS_SOLVER')
         self._solved_msg = value
-
-    @property
-    def path_mapping(self):
-        """(dict[str, MappingInfo]): Mapping used internally to register the challenge URL's paths.
-            It does contain a mapping of ``path`` to ``MappingInfo`` dictionary details.
-
-            Example:
-                Have the challenge ``/`` path expose the anvil service which is running internally on port ``8545``::
-
-                    self.path_mapping = {
-                        '/': {
-                                'host': '127.0.0.1', # optional. Defaults to '127.0.0.1'
-                                'port': 8545,
-                                'path': '/', # optional. Defaults to '/'
-                                'methods': ['POST'] # optional. Defaults to ['GET']
-                        }
-                    }
-
-                Redirect all request to the service running on port ``8080`` and under ``/service``::
-
-                    self.path_mapping = {
-                        '/<path:path>': {
-                                'port': 8080,
-                                'path': '/service',
-                                'methods': ['GET', 'POST', 'HEAD']
-                        }
-                    }
-        """
-        return self._path_mapping
-
-    @path_mapping.setter
-    def path_mapping(self, value):
-        self._path_mapping = value
 
     @property
     def state(self):
@@ -411,16 +458,16 @@ class GenericChallenge(ABC):
 
         return response
 
-    def _generic_path_handler(self, path, path_data: MappingInfo):
+    def _generic_path_handler(self, port, host, path):
 
-        port = path_data['port']
-        host = path_data.get('host', '127.0.0.1')
-        proxy_path = path_data.get('path', '/')
+        # port = path_data['port']
+        # host = path_data.get('host', '127.0.0.1')
+        # proxy_path = path_data.get('path', '/')
 
         def _handler(**kwargs):
 
             # Important to add the final '/'
-            full_path = urljoin(proxy_path, '/' + kwargs.get('path', ''))
+            full_path = urljoin(path, '/' + kwargs.get('path', ''))
             full_url = f'http://{host}:{port}{full_path}'
 
             try:
@@ -446,11 +493,26 @@ class GenericChallenge(ABC):
         return _handler
 
     def _register_challenge_paths(self):
-        for i, values in enumerate(self.path_mapping.items()):
+        for i, values in enumerate(self.PATH_MAPPING.items()):
             path, path_data = values
             methods = path_data.get('methods', ['GET'])
+            host = path_data.get('host', '127.0.0.1')
+            port = path_data['port']
             # TODO: Verify methods and path_data
-            self._app.add_url_rule(path, 'mapping-{}'.format(i), self._generic_path_handler(path, path_data), methods=methods)
+            _filter = path_data.get('filter', None)
+            if _filter and _filter['method']:
+                _filter_args = _filter.get('args', [])
+                _filter_kwargs = _filter.get('kwargs', {})
+
+                random_port = find_free_port()
+
+                # The filter should listen on random port and redirect to host:port
+                _filter['method'](*_filter_args, **_filter_kwargs, listen_port=random_port, to_port=port, to_host=host)
+
+                # The path mapping should redirect to 127.0.0.1:random_port
+                self._app.add_url_rule(path, 'mapping-{}'.format(i), self._generic_path_handler(port=random_port, host='127.0.0.1', path=path), methods=methods)
+            else:
+                self._app.add_url_rule(path, 'mapping-{}'.format(i), self._generic_path_handler(port=port, host=host, path=path), methods=methods)
 
     def _flask_run(self):
         cli = sys.modules['flask.cli']
@@ -490,9 +552,12 @@ class GenericChallenge(ABC):
             self._state_public._merge(tmp)
 
             self._register_flask_paths()
-            self._register_challenge_paths()
 
             self.run()
+
+            self._register_challenge_paths()
+
+            self.ready = True
 
             self._flask_run()
 

@@ -21,9 +21,10 @@ class WhitelistJSONRPCMethod:
         if ctx.options.methods:
             _allmethods = json.loads(ctx.options.methods)
             for _method in _allmethods:
-                if re.search(_method, json_dump['method']) is not None:
-                    is_whitelisted = True
-                    break
+                if _method.strip() != '':
+                    if re.search(_method, json_dump['method']) is not None:
+                        is_whitelisted = True
+                        break
 
         if not is_whitelisted:
             status = 200

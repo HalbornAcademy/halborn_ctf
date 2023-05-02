@@ -1,40 +1,36 @@
-===========
-halborn_ctf
-===========
-
-This is the documentation of **halborn_ctf**.
-
-.. note::
-
-    This is the main page of your project's `Sphinx`_ documentation.
-    It is formatted in `reStructuredText`_. Add additional pages
-    by creating rst-files in ``docs`` and adding them to the `toctree`_ below.
-    Use then `references`_ in order to link them from this page, e.g.
-    :ref:`authors` and :ref:`changes`.
-
-    It is also possible to refer to the documentation of other Python packages
-    with the `Python domain syntax`_. By default you can reference the
-    documentation of `Sphinx`_, `Python`_, `NumPy`_, `SciPy`_, `matplotlib`_,
-    `Pandas`_, `Scikit-Learn`_. You can add more by extending the
-    ``intersphinx_mapping`` in your Sphinx's ``conf.py``.
-
-    The pretty useful extension `autodoc`_ is activated by default and lets
-    you include documentation from docstrings. Docstrings can be written in
-    `Google style`_ (recommended!), `NumPy style`_ and `classical style`_.
-
+.. include:: ../README.rst
 
 Contents
 ========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
+   :caption: Getting Started
 
-   Overview <readme>
+   src/getting_started/installation
+   src/getting_started/quick_start
+   src/getting_started/examples
+
+.. toctree::
+   :maxdepth: 1
+   :caption: User Guide
+
+   source/user_guide/faq
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Developer Guide
+
    Contributions & Help <contributing>
-   License <license>
    Authors <authors>
+   License <license>
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reference
+
+   API <api/modules>
    Changelog <changelog>
-   Module Reference <api/modules>
 
 
 Indices and tables

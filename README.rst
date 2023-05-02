@@ -27,7 +27,6 @@
     :alt: Project generated with PyScaffold
     :target: https://pyscaffold.org/
 
-|
 
 ===========
 halborn_ctf
