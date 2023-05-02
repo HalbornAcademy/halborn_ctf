@@ -27,8 +27,8 @@ import os
 
 from halborn_ctf import __version__
 
-__author__ = "fr0zn"
-__copyright__ = "fr0zn"
+__author__ = "ferran.celades"
+__copyright__ = "ferran.celades"
 __license__ = "MIT"
 
 _logger = logging.getLogger(__name__)

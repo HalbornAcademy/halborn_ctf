@@ -2,4 +2,4 @@
 Contributors
 ============
 
-* fr0zn <ferran.celades@hotmail.com>
+* ferran.celades <ferran.celades@halborn.com>

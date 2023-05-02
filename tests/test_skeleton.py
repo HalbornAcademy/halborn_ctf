@@ -2,8 +2,8 @@ import pytest
 
 from halborn_ctf.skeleton import fib, main
 
-__author__ = "fr0zn"
-__copyright__ = "fr0zn"
+__author__ = "ferran.celades"
+__copyright__ = "ferran.celades"
 __license__ = "MIT"
 
 
