@@ -288,10 +288,14 @@ class GenericChallenge(ABC):
         if not self.state.ready:
             return Response("Challenge not ready", status=503)
 
-        fileName = f"{self.CHALLENGE_NAME}.zip"
+        name = self.CHALLENGE_NAME.replace(' ','_')
+
+        fileName = f"{name}.zip"
+        files = self.files() + ['challenge.py']
+
         memory_file = BytesIO()
         with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for _added in self.files():
+            for _added in files:
                 for result in glob.glob(_added):
                     zipf.write(result)
 
