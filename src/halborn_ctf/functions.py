@@ -30,6 +30,15 @@ def periodic(*, every: int):
     Args:
         every (int): The amount of seconds to wait to execute the function again. It should be bigger than 0.
 
+    Example:
+        @periodic(every=1)
+        def function():
+            print("HI")
+
+        function() # Does start printing "HI" every 1 second
+
+        function.stop() # Does stop the function execution
+
     Raises:
         ValueError: If the ``every`` parameter is set to 0.
     """
