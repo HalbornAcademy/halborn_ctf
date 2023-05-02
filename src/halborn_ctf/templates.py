@@ -355,13 +355,16 @@ class GenericChallenge(ABC):
         self._state_set = True
 
     def _app_info_handler(self):
-        if not self.state.ready:
+        if not self.ready:
             return Response("Challenge not ready", status=503)
 
-        return self.state.public
+        return {
+            'ready': self.ready,
+            'state': self.state_public,
+        }
 
     def _app_files_handler(self):
-        if not self.state.ready:
+        if not self.ready:
             return Response("Challenge not ready", status=503)
 
         name = self.CHALLENGE_NAME.replace(' ','_')
@@ -381,30 +384,26 @@ class GenericChallenge(ABC):
                         as_attachment=True)
 
     def _app_solved_handler(self):
-        if not self.state.ready:
+        if not self.ready:
             return Response("Challenge not ready", status=503)
 
-        _pre_state = self.state.get('solved', False)
-
         # If not solved, we check on the solver
-        if not _pre_state:
+        if not self.solved:
             try:
                 self.solver()
             except Exception as e:
                 self._log.exception(e)
 
-        _solved_state = self.state.get('solved', False)
         response = {
-            'solved': _solved_state
-            }
+            'solved': self.solved
+        }
 
-        _solved_message = self.state.get('solved_msg', None)
-        if _solved_message:
-            response['msg'] = _solved_message
+        if self.solved_msg:
+            response['msg'] = self.solved_msg
         else:
-            response['msg'] = 'Solved' if _solved_state else 'Not solved'
+            response['msg'] = 'Solved' if self.solved else 'Not solved'
 
-        if _solved_state and self.FLAG_TYPE == FlagType.DYNAMIC:
+        if self.solved and self.FLAG_TYPE == FlagType.DYNAMIC:
             response['flag'] = os.environ.get('FLAG', 'HAL{PLACEHOLDER}')
 
         return response
