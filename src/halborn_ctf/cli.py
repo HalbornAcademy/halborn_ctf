@@ -1,23 +1,8 @@
 """
-This is a skeleton file that can serve as a starting point for a Python
-console script. To run this script uncomment the following lines in the
-``[options.entry_points]`` section in ``setup.cfg``::
+This is the CLI module exposing a system command named ``halborn_ctf`` that helps
+running template extended challenges (:obj:`halborn_ctf.templates.GenericChallenge`).
 
-    console_scripts =
-         fibonacci = halborn_ctf.skeleton:run
-
-Then run ``pip install .`` (or ``pip install -e .`` for editable mode)
-which will install the command ``fibonacci`` inside your current environment.
-
-Besides console scripts, the header (i.e. until ``_logger``...) of this file can
-also be used as template for Python modules.
-
-Note:
-    This file can be renamed depending on your needs or safely removed if not needed.
-
-References:
-    - https://setuptools.pypa.io/en/latest/userguide/entry_point.html
-    - https://pip.pypa.io/en/stable/reference/pip_install
+The entry point for the CLI command is the :obj:`run` function.
 """
 
 import argparse
@@ -56,9 +41,10 @@ def _parse_args(args):
         action="version",
         version=f"halborn_ctf {__version__}",
     )
-    parser.add_argument(dest="method", help="The method to run on the challenge", type=str, metavar="METHOD")
+    parser.add_argument(dest="method", help="The method to run on the challenge", type=str, metavar="METHOD", choices=['build', 'run'])
     # parser.add_argument(dest="file", help="The file where the challenge is present", type=str, metavar="FILE")
-    parser.add_argument("-f", "--file", help="File path", default="challenge.py")
+    parser.add_argument("-c", "--class", help="Class name", default="Challenge")
+    parser.add_argument("-f", "--file", help="File path", default="./challenge.py")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -69,7 +55,7 @@ def _parse_args(args):
     )
     parser.add_argument(
         "-vv",
-        "--very-verbose",
+        "--debug",
         dest="loglevel",
         help="set loglevel to DEBUG",
         action="store_const",
@@ -92,14 +78,11 @@ def _setup_logging(loglevel):
 
 
 def main(args):
-    """Wrapper allowing :func:`fib` to be called with string arguments in a CLI fashion
-
-    Instead of returning the value from :func:`fib`, it prints the result to the
-    ``stdout`` in a nicely formatted message.
+    """Wrapper allowing any method to be called on a given module/class provided via arguments in a CLI fashion
 
     Args:
-      args (List[str]): command line parameters as list of strings
-          (for example  ``["--verbose", "42"]``).
+      args (List[str]): command line parameters as list of strings.
+
     """
     args = _parse_args(args)
     _path = os.path.dirname(os.path.abspath(args.file))
@@ -112,9 +95,27 @@ def main(args):
 
 
 def run():
-    """Calls :func:`main` passing the CLI arguments extracted from :obj:`sys.argv`
+    """Calls :func:`main` passing the CLI arguments extracted from :obj:`sys.argv`.
 
-    This function can be used as entry point to create console scripts with setuptools.
+    This function can be used as entry point for the ``halborn_ctf`` challenges.
+
+    The allowed flags are:
+
+        - ``[METHOD]``: The method to execute. Only 'build' and 'run' are allowed. Valids are ``build, run``.
+        - ``-f/--file``: The file where the class/function is present. Defaults to ``"./challenge.py"``.
+        - ``-c/--class``: The class where the method is found. Defaults to ``"Challenge"``.
+        - ``-v/--verbose``: Verbose (INFO).
+        - ``-vv/--debug``: Verbose (DEBUG).
+
+    Example:
+        Executing method ``run`` from the ``challenge.py`` file and the class named ``Challenge`` in debug mode::
+
+            halborn_ctf run -vv
+
+        Executing method ``build`` from the ``file.py`` file and the class named ``ChallengeCustom``::
+
+            halborn_ctf build -f file.py -c ChallengeCustom
+
     """
     main(sys.argv[1:])
 

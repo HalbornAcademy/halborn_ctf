@@ -1,3 +1,24 @@
+"""Templates to create CTF challenges.
+
+Creating a challenge consists on the following steps:
+
+- Pick a template from this module to use. If undecided use the :obj:`ChallengeGeneric` and configure it by reading the documentation.
+- Create a class extending the template and implement the abstract methods::
+
+    # challenge.py
+    class Challenge(ChallengeGeneric):
+
+        def build(self):
+            pass
+
+        def run(self):
+            pass
+
+- Test the template by using the ``halborn_ctf`` CLI (:obj:`halborn_ctf.cli.run`)::
+
+    halborn_ctf run -vv
+
+"""
 import logging
 import flask
 from flask_cors import CORS
@@ -69,7 +90,7 @@ class FlagType(Enum):
     """If the flag is statically defined or embedded into the challenge somewhere.
     """
     DYNAMIC = 2
-    """If the flag is dynamically defined by using "env['FLAG']".
+    """When the challenge is deployed a ``FLAG`` environment variable will be set.
     """
 
 class GenericChallenge(ABC):
@@ -90,26 +111,27 @@ class GenericChallenge(ABC):
 
     - ``/state``: Does contain general info of the challenge such as :obj:`ready` and :obj:`public`.
     - ``/solved``: Does execute the "solved" function and display if the challenge was solved together with a solved message or hint to the player.
+
     Note:
         Only if :attr:`HAS_SOLVER` == ``True``.
 
     - ``/files``: Does download the files listed under the "files" function as a zip file named by :attr:`CHALLENGE_NAME`.
+
     Note:
         Only if :attr:`HAS_FILES` == ``True``.
 
     """
 
     CHALLENGE_NAME = os.environ.get('CHALLENGE_NAME', 'challenge')
+    """ (str): The name of the challenge.
     """
-    (str): The name of the challenge.
-    """
+
     FLAG_TYPE = FlagType.NONE
+    """ (FlagType): The type of flag. Set to :obj:`FlagType.NONE` if using a solver unless using manual flag input on the CTF platform.
     """
-    (FlagType): The type of flag. Set to :obj:`FlagType.NONE` if using a solver unless using manual flag input on the CTF platform.
-    """
+
     HAS_FILES = False
-    """
-    (bool): If the challenge has downloadable files. A "files" function must be defined returning a list of files that
+    """ (bool): If the challenge has downloadable files. A "files" function must be defined returning a list of files that
     will be downloable from the challenge container. Glob patterns can be used (:mod:`glob`)::
 
         def files(self):
@@ -120,6 +142,7 @@ class GenericChallenge(ABC):
                 "folder2/**",
                 "folder3/*.sol",
             ]
+
     Note:
         Each time the user request the `/files` route a zip archive with all of the listed files will be downloaded.
     """
@@ -292,7 +315,7 @@ class GenericChallenge(ABC):
             'msg': self.state.get('solved_msg', 'Solved' if _solved_state else 'Not solved'),
             }
 
-        if self.FLAG_TYPE != FlagType.NONE:
+        if _solved_state and self.FLAG_TYPE == FlagType.DYNAMIC:
             response['flag'] = os.environ.get('FLAG', 'HAL{PLACEHOLDER}')
 
         return response
