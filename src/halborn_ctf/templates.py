@@ -21,6 +21,7 @@ Creating a challenge consists on the following steps:
 - Server can be accessed under ``localhost:8080`` by default.
 
 """
+from dataclasses import dataclass
 import logging
 import flask
 from flask_cors import CORS
@@ -113,6 +114,24 @@ class FlagType(Enum):
     """When the challenge is deployed a ``FLAG`` environment variable will be set.
     """
 
+@dataclass
+class StrFile():
+    """It allows to create a container for temporary generated files from strings. It can be used on the
+    :obj:`GenericChallenge.HAS_FILES` to add on-the fly files:
+
+    Example::
+
+        from halborn_ctf.templates import StrFile
+
+        def files(self):
+            return [
+                StrFile('folder/test.txt', 'THIS IS THE CONTENT')
+            ]
+
+    """
+    filepath: str
+    content: str
+
 class GenericChallenge(ABC):
     """Generic CTF challenge template
 
@@ -161,6 +180,9 @@ class GenericChallenge(ABC):
                 "folder2/**",
                 "folder3/*.sol",
             ]
+
+    Tip:
+        You can also create virtual files from strings using :obj:`StrFile`.
 
     Note:
         Each time the user request the `/files` route a zip archive with all of the listed files will be downloaded.
@@ -476,8 +498,11 @@ class GenericChallenge(ABC):
         memory_file = BytesIO()
         with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for _added in files:
-                for result in glob.glob(_added):
-                    zipf.write(result)
+                if type(_added) == StrFile:
+                    zipf.writestr(_added.filepath, _added.content)
+                else:
+                    for result in glob.glob(_added):
+                        zipf.write(result)
 
         memory_file.seek(0)
         return flask.send_file(memory_file,
