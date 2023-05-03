@@ -125,11 +125,11 @@ class GenericChallenge(ABC):
 
     An attribute named :obj:`state` can be used to store any sort of object that will persiste between the ``build`` and ``run`` steps. Furthermore,
     this attribute can be used to store anything that would be used across the different functions. The `state_public` property will be exposed
-    under the `/state` path on the challenge domain.
+    under the `/info` path on the challenge domain.
 
     The following routes will be exposed under ``localhost:8080``:
 
-    - ``/state``: Does contain general info of the challenge such as :obj:`ready` and :obj:`state_public`.
+    - ``/info``: Does contain general info of the challenge such as :obj:`ready` and :obj:`state_public`.
     - ``/solved``: Does execute the "solver" function and display if the challenge was solved together with a solved message or hint to the player.
 
     Note:
@@ -165,6 +165,7 @@ class GenericChallenge(ABC):
     Note:
         Each time the user request the `/files` route a zip archive with all of the listed files will be downloaded.
     """
+
     HAS_SOLVER = False
     """
     (bool): If the challenge has a solver. The required function "solver" should be present. Although it is possible
@@ -175,7 +176,58 @@ class GenericChallenge(ABC):
             pass
 
     Note:
-        This function will be executed each time the user requests the `/solved` route.
+        This function will be executed each time the user requests the ``/solved`` route.
+    """
+
+    HAS_DETAILS = False
+    """
+    (bool): If the challenge has dynamic or specific implementation details. The required function "details" should be present.
+    This function must return a string. You can format the string using any ``state`` variable or any dynamic content (for example a file content).
+
+    The string does support ``Markdown`` syntax and will be displayed on the platform UI and under the ``/info`` route
+
+    Example::
+
+        DETAILS_TEMPLATE = '''
+        This is a detailed description of the challenge:
+
+        You will require:
+
+        - This
+        - That
+
+        You can also check: {custom_value}
+
+        Don't forget: {extra}
+
+        Helper:
+
+        ``` python
+        def helper():
+            pass
+        ```
+        '''
+
+        ...
+
+        def __init__(self):
+            super().__init__()
+
+            self.state = {
+                'custom_value': 0x1337
+            }
+
+
+        def details(self):
+            return DETAILS_TEMPLATE.format(
+                **self.state,
+                **{
+                    'extra': "Extra info"
+                }
+            )
+
+    Note:
+        This function will be executed each time the user requests the ``/info`` route.
     """
 
     PATH_MAPPING = {}
@@ -233,6 +285,21 @@ class GenericChallenge(ABC):
         be extracted from the mapping itself and a random listening port used and remapped.
     """
 
+    def _check_feature_enabled(self, feature_name, required_function):
+        if getattr(self, feature_name):
+            try:
+                getattr(self, required_function)
+            except:
+                raise NotImplementedError(f'Missing function "{required_function}" ({feature_name} == True)')
+        else:
+            try:
+                getattr(self, required_function)
+                raise NotImplementedError(f'Remove "{required_function}" function ({feature_name} == False)')
+            except:
+                pass
+
+
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -257,29 +324,9 @@ class GenericChallenge(ABC):
             # self._state._setattr('solved', False)
             # self._state._setattr('solved_msg', None)
 
-        if self.HAS_FILES:
-            try:
-                getattr(self, 'files')
-            except:
-                raise NotImplementedError('Missing function "files" (HAS_FILES == True)')
-        else:
-            try:
-                getattr(self, 'files')
-                raise NotImplementedError('Remove "files" function (HAS_FILES == False)')
-            except:
-                pass
-
-        if self.HAS_SOLVER:
-            try:
-                getattr(self, 'solver')
-            except:
-                raise NotImplementedError('Missing function "solver" (HAS_SOLVER == True)')
-        else:
-            try:
-                getattr(self, 'solver')
-                raise NotImplementedError('Remove "solver" function (HAS_SOLVER == False)')
-            except:
-                pass
+        self._check_feature_enabled('HAS_FILES', 'files')
+        self._check_feature_enabled('HAS_SOLVER', 'solver')
+        self._check_feature_enabled('HAS_DETAILS', 'details')
 
         if not self.HAS_SOLVER and self.FLAG_TYPE == FlagType.NONE:
             raise ValueError("HAS_SOLVER == False and FLAG_TYPE == NONE")
@@ -373,6 +420,8 @@ class GenericChallenge(ABC):
                 # Changed value
 
         """
+        if not self._state_set:
+            raise ValueError("State not initialized")
         return self._state
 
     @state.setter
@@ -385,8 +434,10 @@ class GenericChallenge(ABC):
 
     @property
     def state_public(self):
-        """(State): It will expose the state content into the challenge ``/state`` route. Refer to :obj:`state`.
+        """(State): It will expose the state content into the challenge ``/info`` route. Refer to :obj:`state`.
         """
+        if not self._state_public_set:
+            raise ValueError("State not initialized")
         return self._state_public
 
     @state_public.setter
@@ -401,10 +452,17 @@ class GenericChallenge(ABC):
         if not self._ready:
             return Response("Challenge not ready", status=503)
 
-        return {
+        _return = {
             'ready': self._ready,
-            'state': self.state_public,
+            'state': self._state_public,
         }
+
+        if self.HAS_DETAILS:
+            _return['details'] = self.details()
+        else:
+            _return['details'] = None
+
+        return _return
 
     def _app_files_handler(self):
         if not self._ready:
@@ -516,7 +574,7 @@ class GenericChallenge(ABC):
     #######################################
 
     def _register_flask_paths(self):
-        self._app.add_url_rule('/state', 'public-state', self._app_info_handler, methods=['GET'])
+        self._app.add_url_rule('/info', 'info', self._app_info_handler, methods=['GET'])
         if self.HAS_FILES:
             self._app.add_url_rule('/files', 'files', self._app_files_handler, methods=['GET'])
         if self.HAS_SOLVER:

@@ -58,7 +58,9 @@ class State(dict):
         super(State,self).__init__(_dict)
 
     def __getattr__(self, key):
-        return self.get(key, None)
+        if key not in self:
+            raise ValueError(f'Key "{key}" not found')
+        return self.get(key)
 
     # def __setitem__(self, key, value):
     #     super().__setitem__(key, value)

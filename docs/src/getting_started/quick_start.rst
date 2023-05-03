@@ -22,7 +22,7 @@ Over an existing or empty folder with the files that are required by the challen
 
 .. code::
 
-    from halborn_ctf.templates import GenericChallenge 
+    from halborn_ctf.templates import GenericChallenge
 
     class Challenge(GenericChallenge):
 
@@ -37,7 +37,7 @@ Over an existing or empty folder with the files that are required by the challen
         def run(self):
             # Do deployment
             pass
-        
+
         def solver(self):
             self.solved = True
 
@@ -60,15 +60,15 @@ Check that the challenge can run (:mod:`halborn_ctf.templates.GenericChallenge.r
     * Running on http://127.0.0.1:8080
 
 
-You should see that a server has been spawned locally on port ``8080``. 
+You should see that a server has been spawned locally on port ``8080``.
 
 By default the challenge will expose the following routes:
 
-- ``/state``: Does return challenge public state: ``{"ready":true,"state":{}}`` (http://127.0.0.1:8080/state)
+- ``/info``: Does return challenge public state: ``{"ready":true,"state":{}}`` (http://127.0.0.1:8080/info)
 
 
-.. note:: 
-    Since we have set ``HAS_SOLVER`` (:mod:`halborn_ctf.templates.GenericChallenge.HAS_SOLVER`). The ``solver`` function must exist. 
+.. note::
+    Since we have set ``HAS_SOLVER`` (:mod:`halborn_ctf.templates.GenericChallenge.HAS_SOLVER`). The ``solver`` function must exist.
     The ``/solved`` route will also be exposed (http://127.0.0.1:8080/solved). Each time the route is accessed this function will be executed before responding the HTTP request.
 
     The route is now returning that the challenge is solved as we set ``self.solved = True``::
@@ -77,8 +77,8 @@ By default the challenge will expose the following routes:
             "msg": "Solved",
             "solved": true
         }
-    
-.. tip:: 
+
+.. tip::
     If the function does take a lot to execute or does require background processing take a look at :ref:`periodic-solver`.
 
 
@@ -104,8 +104,8 @@ internal services and expose them on the challenge server you must define a path
 
         CHALLENGE_NAME = 'MY CHALLENGE'
 
-        # rule1: A request to http://challenge/ will be proxied to http://127.0.0.1:9999/. 
-        # rule2: A request to http://challenge/my_path/file will be proxied to http://127.0.0.1:9999/my_path/file. 
+        # rule1: A request to http://challenge/ will be proxied to http://127.0.0.1:9999/.
+        # rule2: A request to http://challenge/my_path/file will be proxied to http://127.0.0.1:9999/my_path/file.
 
         PATH_MAPPING = {
             '/': {
@@ -134,21 +134,21 @@ internal services and expose them on the challenge server you must define a path
             if "halborn_ctf.txt" in response:
                 self.solved = True
 
-The previous challenge does use functions from this framework to run a shell command in the background with an http 
-server on the current directory. It then waits for the port to be listening. 
+The previous challenge does use functions from this framework to run a shell command in the background with an http
+server on the current directory. It then waits for the port to be listening.
 
 If you now try to access http://127.0.0.1:8080 you will be able to see the current directory listing. This is achieved by the ``PATH_MAPPING`` attribute which proxies
 any request on the ``/`` path to the server listening on port ``9999``. It also proxies any subpath request ``/<path:path>`` to the same server from the ``/`` path.
 
-If you now try to request http://127.0.0.1:8080/solved you will see that the challenge does report as not being solved. 
+If you now try to request http://127.0.0.1:8080/solved you will see that the challenge does report as not being solved.
 
 .. tip::
 
     To solve the challenge create a file named ``halborn_ctf.txt`` under the challenge directory:
 
     .. code-block:: console
-        
-        $ touch halborn_ctf.txt 
+
+        $ touch halborn_ctf.txt
 
 
 
@@ -163,11 +163,11 @@ We can create a file as a test to be exposed with the challenge:
 
 .. code-block:: console
 
-    $ echo "Test content" > test.txt 
+    $ echo "Test content" > test.txt
 
 .. code::
 
-    from halborn_ctf.templates import GenericChallenge 
+    from halborn_ctf.templates import GenericChallenge
 
     class Challenge(GenericChallenge):
 
@@ -183,10 +183,10 @@ We can create a file as a test to be exposed with the challenge:
         def run(self):
             # Do deployment....
             pass
-        
+
         def solver(self):
             self.solved = True
-        
+
         def files(self):
             return [
                 'test.txt'
@@ -198,14 +198,14 @@ If we now try to access the server at ``/files`` (http://127.0.0.1:8080/files) a
 Working with the state
 ----------------------
 
-If you want to persist variables across ``build`` and ``run`` and all periodic functions 
-you can use the :obj:`halborn_ctf.templates.GenericChallenge.state` and :obj:`halborn_ctf.templates.GenericChallenge.state_public` 
+If you want to persist variables across ``build`` and ``run`` and all periodic functions
+you can use the :obj:`halborn_ctf.templates.GenericChallenge.state` and :obj:`halborn_ctf.templates.GenericChallenge.state_public`
 properties. This property can be accessed anywhere but must be declared on the ``__init__`` function with the initial values.
 
 
 .. code::
 
-    from halborn_ctf.templates import GenericChallenge 
+    from halborn_ctf.templates import GenericChallenge
 
     class Challenge(GenericChallenge):
 
@@ -228,13 +228,13 @@ properties. This property can be accessed anywhere but must be declared on the `
         def run(self):
             # Do deployment
             pass
-        
+
         def solver(self):
             self.state.solved_attempts += 1
 
             if self.state.solved_attempts == 2:
                 self.solved = True
-        
+
         def files(self):
             return [
                 'test.txt'
@@ -242,18 +242,18 @@ properties. This property can be accessed anywhere but must be declared on the `
 
 
 .. note::
-    The ``state_public`` can be accessed and seen on the ``/state`` challenge route. (http://127.0.0.1:8080/state)
+    The ``state_public`` can be accessed and seen on the ``/info`` challenge route. (http://127.0.0.1:8080/info)
 
 .. _periodic-solver:
 
-Periodic solver 
+Periodic solver
 ---------------
 
 If the function does take a lot to execute or does require background processing you can always define a periodic function and start it before setting the challenge to ready. Take a look on how to use the decorator under :obj:`halborn_ctf.functions.periodic`.
 
 .. code::
 
-    from halborn_ctf.templates import GenericChallenge 
+    from halborn_ctf.templates import GenericChallenge
 
     from halborn_ctf.functions import periodic
 
@@ -284,7 +284,7 @@ If the function does take a lot to execute or does require background processing
 
             ########### Start the periodic function ##########
             self.my_checker()
-        
+
         def solver(self):
             # The solve is done on the `my_checker` function
             pass
