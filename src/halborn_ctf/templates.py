@@ -37,6 +37,7 @@ import signal
 from urllib.parse import urljoin
 from typing import TypedDict, NotRequired, Callable
 from enum import Enum
+from textwrap import dedent
 
 from .state import State
 
@@ -480,7 +481,7 @@ class GenericChallenge(ABC):
         }
 
         if self.HAS_DETAILS:
-            _return['details'] = self.details()
+            _return['details'] = dedent(self.details()).strip()
         else:
             _return['details'] = None
 
