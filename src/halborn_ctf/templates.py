@@ -398,16 +398,16 @@ class GenericChallenge(ABC):
         self._state_public_set = True
 
     def _app_info_handler(self):
-        if not self.ready:
+        if not self._ready:
             return Response("Challenge not ready", status=503)
 
         return {
-            'ready': self.ready,
+            'ready': self._ready,
             'state': self.state_public,
         }
 
     def _app_files_handler(self):
-        if not self.ready:
+        if not self._ready:
             return Response("Challenge not ready", status=503)
 
         name = self.CHALLENGE_NAME.replace(' ','_')
@@ -427,7 +427,7 @@ class GenericChallenge(ABC):
                         as_attachment=True)
 
     def _app_solved_handler(self):
-        if not self.ready:
+        if not self._ready:
             return Response("Challenge not ready", status=503)
 
         # If not solved, we check on the solver
@@ -550,7 +550,7 @@ class GenericChallenge(ABC):
 
             self._register_challenge_paths()
 
-            self.ready = True
+            self._ready = True
 
             self._flask_run()
 
