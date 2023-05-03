@@ -15,7 +15,7 @@ Contents
    :maxdepth: 1
    :caption: User Guide
 
-   source/user_guide/faq
+   src/user_guide/faq
 
 .. toctree::
    :maxdepth: 1
