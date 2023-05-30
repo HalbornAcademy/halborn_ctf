@@ -494,7 +494,7 @@ class GenericChallenge(ABC):
         name = self.CHALLENGE_NAME.replace(' ','_')
 
         fileName = f"{name}.zip"
-        files = self.files() + ['challenge.py']
+        files = self.files() + ['challenge.py', 'Dockerfile']
 
         memory_file = BytesIO()
         with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
