@@ -472,8 +472,8 @@ class GenericChallenge(ABC):
         self._state_public_set = True
 
     def _app_info_handler(self):
-        if not self._ready:
-            return Response("Challenge not ready", status=503)
+        # if not self._ready:
+        #     return Response("Challenge not ready", status=503)
 
         _return = {
             'ready': self._ready,
