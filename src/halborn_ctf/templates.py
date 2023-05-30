@@ -525,8 +525,8 @@ class GenericChallenge(ABC):
             'solved': self.solved
         }
 
-        if self.solved_msg:
-            response['msg'] = self.solved_msg
+        if self._solved_msg:
+            response['msg'] = self._solved_msg
         else:
             response['msg'] = 'Solved' if self.solved else 'Not solved'
 
