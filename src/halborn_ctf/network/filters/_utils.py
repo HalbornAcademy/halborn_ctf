@@ -4,24 +4,23 @@ import json
 def generic_filter(filter_file, **kwargs):
     """Allows running an arbitrary ``mitmdump`` script as a background shell process.
 
-    The ``mitmdump`` will be used in ``upstream`` mode against ``http://{to_host}:{to_port}`` 
-    and listen under ``listen_port``. Any extra arguments provided to the ``generic_filter`` will be
-    transfered to the ``script`` using the ``--set`` command flag on the command line of mitmdump 
+    The ``mitmdump`` will be used in ``upstream`` mode. Any extra arguments provided to the ``generic_filter`` will be
+    transfered to the ``script`` using the ``--set`` command flag on the command line of mitmdump
     as JSON encoded string which can be accessed on the script using ``mitmproxy.ctx.options.[varname]``.
 
-    Example:
-        Once the script is created it can be executed using :class:`generic_filter`::
+    https://docs.mitmproxy.org/stable/addons-examples/
 
-            generic_filter('./filter.py', listen_port=8545, to_port=9999, custom='More data')
+    Example:
+        Once the script is created it can be used on using :class:`generic_filter`::
+
+            generic_filter('./filter.py', my_args=[], extra_custom='more')
             ...
-            # The script can access the extra **kwargs using ``ctx.options.[kwargname]`` and JSON decoding it
-            custom_data = json.loads(ctx.options.custom)
+            # The script can access the extra **kwargs using ``ctx.options.[varname]`` and JSON decoding it
+            custom_data = json.loads(ctx.options.[varname])
 
     Args:
         script (str): Path of the script to execute
-        listen_port (int): Port that mitmdump will listen on
-        to_port (int): The upstream port to proxy traffic to
-        to_host (str): The upstream host to proxy traffic to. Defaults to '127.0.0.1'.
+        **kwargs: Any extra arguments that the filter script needs
     """
     def _wrapper(listen_port, to_port, to_host='127.0.0.1'):
         set_args = ' '.join(['--set {0}={1}'.format(k, json.dumps(json.dumps(v))) for k,v in kwargs.items()])

@@ -11,33 +11,29 @@ Example:
         ...
 
         # Have port 8545 be exposed on the root of the challenge
-        self.path_mapping = {
+        PATH_MAPPING = {
             '/': {
                     'port': 8545,
                     'path': '/',
-                    'methods': ['POST']
+                    'methods': ['POST'],
+                    'filter': network.filters.json_rpc.whitelist_methods(['net_*', 'eth_*'...])
             },
         }
 
         ...
 
-        # Expose anvil to an internal port that will is not being exposed
-        shell.run('anvil -p 9999')
-        network.filters.json_rpc.filter_methods(['evm_*'], listen_port=8545, to_port=9999)
+        shell.run('anvil -p 8545')
 
-        # We can also use the whitelist variant to only allow those methods
-        # network.filters.json_rpc.whitelist_methods(['net_*', 'eth_*'...], listen_port=8545, to_port=9999)
-
-It is possible to also define your own filters (which can later be exposed to the player for reference) by either referencing the current 
-implementations or the official documentation (https://2qwesgdhjuiytyrjhtgdbf.readthedocs.io/en/latest/scripting/inlinescripts.html).
+It is possible to also define your own filters (which can later be exposed to the player for reference) by either referencing the current
+implementations or the official documentation (https://2qwesgdhjuiytyrjhtgdbf.readthedocs.io/en/latest/scripting/inlinescripts.html) and examples (https://docs.mitmproxy.org/stable/addons-examples/).
 
 Example:
-    Once the script is created it can be executed using :class:`generic_filter`::
+    Once the script is created it can be used using :class:`generic_filter`::
 
         generic_filter('./filter.py', my_args=[], extra_custom='more')
         ...
-        # The script can access the extra **kwargs using ``ctx.options.[kwargname]`` and JSON decoding it
-        custom_data = json.loads(ctx.options.custom)
+        # The script can access the extra **kwargs using ``ctx.options.[varname]`` and JSON decoding it
+        custom_data = json.loads(ctx.options.[varname])
 
 """
 from . import json_rpc
