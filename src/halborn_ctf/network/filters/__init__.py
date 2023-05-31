@@ -32,17 +32,17 @@ It is possible to also define your own filters (which can later be exposed to th
 implementations or the official documentation (https://2qwesgdhjuiytyrjhtgdbf.readthedocs.io/en/latest/scripting/inlinescripts.html).
 
 Example:
-    Once the script is created it can be executed using :class:`run_script`::
+    Once the script is created it can be executed using :class:`generic_filter`::
 
-        run_script('./filter.py', listen_port=8545, to_port=9999, custom='More data')
+        generic_filter('./filter.py', my_args=[], extra_custom='more')
         ...
         # The script can access the extra **kwargs using ``ctx.options.[kwargname]`` and JSON decoding it
         custom_data = json.loads(ctx.options.custom)
 
 """
 from . import json_rpc
-from ._utils import run_script
+from ._utils import generic_filter
 
 __all__ = [
-    'run_script'
+    'generic_filter'
 ]

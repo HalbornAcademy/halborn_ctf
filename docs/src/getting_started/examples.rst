@@ -56,35 +56,12 @@ Installing forge
 Filtering
 ======================
 
-Inline:
-
-.. code::
-
-
-    import halborn_ctf.network as network
-
-    ...
-
-        PATH_MAPPING = {
-            '/': {
-                    'port': 8545,
-                    'path': '/',
-                    'methods': ['POST']
-            },
-        }
-
-        ...
-
-        def run(self):
-            network.filters.json_rpc.filter_methods([], listen_port=8545, to_port=8546)
-
-
 On the ``PATH_MAPPING``:
 
 
 .. code::
 
-    import halborn_ctf.network as network
+    import halborn_ctf.network.filters as filters
 
     ...
 
@@ -93,12 +70,7 @@ On the ``PATH_MAPPING``:
                     'port': 8545,
                     'path': '/',
                     'methods': ['POST'],
-                    'filter': {
-                        'method': network.filters.json_rpc.filter_methods,
-                        'args': [
-                            ['evm_.*']
-                        ],
-                    }
+                    'filter': filters.json_rpc.whitelist_methods(['evm_.*']),
             },
         }
 
@@ -106,7 +78,7 @@ With custom filter on the ``PATH_MAPPING``:
 
 .. code::
 
-    import halborn_ctf.network as network
+    import halborn_ctf.network.filters as filters
 
     ...
 
@@ -115,14 +87,6 @@ With custom filter on the ``PATH_MAPPING``:
                     'port': 8545,
                     'path': '/',
                     'methods': ['POST'],
-                    'filter': {
-                        'method': network.filters.run_script,
-                        'args': [
-                            ['filter.py']
-                        ],
-                        'kwargs': {
-                            'context_argument': 0x1337
-                        },
-                    }
+                    'filter': filters.generic_filter('filter_file.py', my_arg=[], extra='more'),
             },
         }

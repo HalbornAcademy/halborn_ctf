@@ -70,20 +70,6 @@ class _CleanChildProcesses:
       # leaves us with a clean exit code if there was no exception.
       pass
 
-class MappingInfoFilter(TypedDict):
-    """Dictionary data type to store the details for a filter used on a mapping.
-    """
-
-    method: Callable
-    """ (Callable): The function that runs the filter.
-    """
-    args: NotRequired[list]
-    """ (list, optional): The list of arguments for the filter function.
-    """
-    kwargs: NotRequired[str]
-    """ (dict, optional): The kwargs for the filter function, only used by default on custom filters and will be passed on the script inside ``ctx.options.[HERE]``.
-    """
-
 class MappingInfo(TypedDict):
     """Dictionary data type to store the details for a path mapping
     """
@@ -100,8 +86,8 @@ class MappingInfo(TypedDict):
     methods: list[str]
     """ (list[str], optional): The allowed methods. Defaults to ``["GET"]``.
     """
-    filter: NotRequired[MappingInfoFilter]
-    """ (MappingInfoFilter, optional): Information containing a filter to execute.
+    filter: Callable
+    """ (Callable, optional): One of the valid built-in filters or a generic_filter function. 
     """
 
 class FlagType(Enum):
@@ -253,7 +239,7 @@ class GenericChallenge(ABC):
         This function will be executed each time the user requests the ``/info`` route.
     """
 
-    PATH_MAPPING = {}
+    PATH_MAPPING: dict[str, MappingInfo] = {}
     """
     (dict[str, MappingInfo]): Mapping used internally to register the challenge URL's paths.
     It does contain a mapping of ``path`` to ``MappingInfo`` dictionary details.
@@ -291,15 +277,7 @@ class GenericChallenge(ABC):
                         'port': 8545,
                         'path': '/',
                         'methods': ['POST'],
-                        'filter': {
-                            'method': network.filters.json_rpc.filter_methods,
-                            'args': [],
-
-                            # Custom filter
-                            # 'method': network.filters.run_script,
-                            # 'args': ['filter.py'],
-                            # 'kwargs': {}
-                        }
+                        'filter': network.filters.json_rpc.whitelist_methods(['evm_.*']),
                 }
             }
 
@@ -355,8 +333,6 @@ class GenericChallenge(ABC):
 
         if not self.HAS_SOLVER and self.FLAG_TYPE == FlagType.NONE:
             raise ValueError("HAS_SOLVER == False and FLAG_TYPE == NONE")
-
-        self._path_mapping: dict[str, MappingInfo] = {}
 
     # @property
     # def ready(self):
@@ -477,10 +453,21 @@ class GenericChallenge(ABC):
         # if not self._ready:
         #     return Response("Challenge not ready", status=503)
 
+        _mapping: dict[str, MappingInfo] = {}
+        for k,v in self.PATH_MAPPING.items():
+            _mapping[k] = {
+                'port': v.get('port'),
+                'host': v.get('host', '127.0.0.1'),
+                'path': v.get('path', '/'),
+                'methods': v.get('methods', ['GET']),
+                # 'filter': _filter
+            }
+
         _return = {
             'ready': self._ready,
             'state': self._state_public,
-            'config': self._challenge_config
+            'config': self._challenge_config,
+            'mapping': _mapping
         }
 
         if self.HAS_DETAILS:
@@ -580,14 +567,11 @@ class GenericChallenge(ABC):
             port = path_data['port']
             # TODO: Verify methods and path_data
             _filter = path_data.get('filter', None)
-            if _filter and _filter['method']:
-                _filter_args = _filter.get('args', [])
-                _filter_kwargs = _filter.get('kwargs', {})
+            if _filter:
 
                 random_port = find_free_port()
 
-                # The filter should listen on random port and redirect to host:port
-                _filter['method'](*_filter_args, **_filter_kwargs, listen_port=random_port, to_port=port, to_host=host)
+                _filter(listen_port=random_port, to_port=port, to_host=host)
 
                 # The path mapping should redirect to 127.0.0.1:random_port
                 self._app.add_url_rule(path, 'mapping-{}'.format(i), self._generic_path_handler(port=random_port, host='127.0.0.1', path=path), methods=methods)
@@ -639,6 +623,8 @@ class GenericChallenge(ABC):
 
             self._ready = True
 
+            # TODO: Try to run in on a thread and start it before the self.run function. This will allow to notify the ready state
+            # in case a backgroun process is not specified as background.
             self._flask_run()
 
 

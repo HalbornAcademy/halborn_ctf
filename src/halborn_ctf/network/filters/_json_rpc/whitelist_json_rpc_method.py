@@ -4,8 +4,6 @@ import re
 import json
 
 class WhitelistJSONRPCMethod:
-    def __init__(self):
-        self.num = 0
 
     def load(self, loader):
         loader.add_option(
