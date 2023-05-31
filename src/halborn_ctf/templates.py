@@ -314,6 +314,8 @@ class GenericChallenge(ABC):
                 getattr(self, required_function)
             except:
                 raise NotImplementedError(f'Missing function "{required_function}" ({feature_name} == True)')
+
+            self._challenge_config[feature_name] = True
         else:
             try:
                 getattr(self, required_function)
@@ -321,6 +323,7 @@ class GenericChallenge(ABC):
             except:
                 pass
 
+            self._challenge_config[feature_name] = False
 
 
     def __init__(self) -> None:
@@ -337,9 +340,8 @@ class GenericChallenge(ABC):
         self._state_public_set = False
         self._state_public = State({})
 
-        #     'public': State({}),
-        #     'ready': False,
-        # })
+        self._challenge_config = {}
+        self._challenge_config['FLAG_TYPE'] = self.FLAG_TYPE.name
 
         if self.HAS_SOLVER:
             self._solved = False
@@ -478,6 +480,7 @@ class GenericChallenge(ABC):
         _return = {
             'ready': self._ready,
             'state': self._state_public,
+            'config': self._challenge_config
         }
 
         if self.HAS_DETAILS:
