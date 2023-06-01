@@ -8,10 +8,6 @@ Creating a challenge consists on the following steps:
     # challenge.py
     class Challenge(ChallengeGeneric):
 
-        # Optional
-        def build(self):
-            pass
-
         def run(self):
             pass
 

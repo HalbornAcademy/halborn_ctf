@@ -30,11 +30,6 @@ Over an existing or empty folder with the files that are required by the challen
 
         CHALLENGE_NAME = 'MY CHALLENGE'
 
-        # optional
-        def build(self):
-            # Do build....
-            pass
-
         def run(self):
             # Do deployment
             pass
@@ -42,12 +37,6 @@ Over an existing or empty folder with the files that are required by the challen
         def solver(self):
             self.solved = True
 
-
-You can now test that the challenge does build with (:mod:`halborn_ctf.templates.GenericChallenge.build`):
-
-.. code-block:: console
-
-    $ halborn_ctf build -vv
 
 Check that the challenge can run (:mod:`halborn_ctf.templates.GenericChallenge.run`):
 
@@ -65,7 +54,7 @@ You should see that a server has been spawned locally on port ``8080``.
 
 By default the challenge will expose the following routes:
 
-- ``/info``: Does return challenge public state: ``{"ready":true,"state":{}}`` (http://127.0.0.1:8080/info)
+- ``/info``: Does return challenge public state: ``{"ready":true,"state":{},"config":{}}`` (http://127.0.0.1:8080/info)
 
 
 .. note::
@@ -81,6 +70,39 @@ By default the challenge will expose the following routes:
 
 .. tip::
     If the function does take a lot to execute or does require background processing take a look at :ref:`periodic-solver`.
+
+
+If you need to execute common state to all players and you want to have it on the ``challenge.py`` file, you can use the (:mod:`halborn_ctf.templates.GenericChallenge.build`) function.
+
+.. code::
+
+    from halborn_ctf.templates import GenericChallenge
+
+    class Challenge(GenericChallenge):
+
+        HAS_SOLVER = True
+
+        CHALLENGE_NAME = 'MY CHALLENGE'
+
+        def build(self):
+            # Do build....
+            pass
+
+        def run(self):
+            # Do deployment
+            pass
+
+        def solver(self):
+            self.solved = True
+
+You can now test that the challenge does build with (:mod:`halborn_ctf.templates.GenericChallenge.build`):
+
+.. code-block:: console
+
+    $ halborn_ctf build -vv
+      ...
+    $ halborn_ctf run -vv
+      ...
 
 
 Service mapping
@@ -120,11 +142,6 @@ internal services and expose them on the challenge server you must define a path
                 'methods': ['GET']
             }
         }
-
-        # optional
-        def build(self):
-            # Do build....
-            pass
 
         def run(self):
             # Do deployment
@@ -178,11 +195,6 @@ We can create a file as a test to be exposed with the challenge:
 
         CHALLENGE_NAME = 'MY CHALLENGE'
 
-        # optional
-        def build(self):
-            # Do build....
-            pass
-
         def run(self):
             # Do deployment....
             pass
@@ -223,11 +235,6 @@ properties. This property can be accessed anywhere but must be declared on the `
             self.state = {
                 'solved_attempts': 0
             }
-
-        # optional
-        def build(self):
-            # Do build....
-            pass
 
         def run(self):
             # Do deployment
@@ -278,11 +285,6 @@ If the function does take a lot to execute or does require background processing
             if self.solved:
                 ########### Stop the periodic function ##########
                 self.my_checker.stop()
-
-        # optional
-        def build(self):
-            # Do build....
-            pass
 
         def run(self):
             # Do deployment

@@ -20,10 +20,6 @@ Minimal template:
         PATH_MAPPING = {
         }
 
-        # optional
-        def build(self):
-            pass
-
         def run(self):
             pass
 
