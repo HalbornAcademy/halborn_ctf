@@ -35,6 +35,11 @@ Example:
         # The script can access the extra **kwargs using ``ctx.options.[varname]`` and JSON decoding it
         custom_data = json.loads(ctx.options.[varname])
 
+Tip:
+    You can use the current ``challenge.py`` as the container for the filter without having to create a separated file by using python built-in ``__file__``::
+
+        generic_filter(__file__, my_args=[], extra_custom='more')
+
 """
 from . import json_rpc
 from ._utils import generic_filter
