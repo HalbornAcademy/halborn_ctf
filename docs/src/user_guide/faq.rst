@@ -49,6 +49,7 @@ Install forge on ``build``
 
     import halborn_ctf.shell as shell
 
+        # optional
         def build(self):
             shell.run('curl -L https://foundry.paradigm.xyz | bash', env={"FOUNDRY_DIR": '/usr'})
             shell.run('foundryup', env={"FOUNDRY_DIR": '/usr'})

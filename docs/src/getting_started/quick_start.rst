@@ -30,6 +30,7 @@ Over an existing or empty folder with the files that are required by the challen
 
         CHALLENGE_NAME = 'MY CHALLENGE'
 
+        # optional
         def build(self):
             # Do build....
             pass
@@ -120,6 +121,7 @@ internal services and expose them on the challenge server you must define a path
             }
         }
 
+        # optional
         def build(self):
             # Do build....
             pass
@@ -176,6 +178,7 @@ We can create a file as a test to be exposed with the challenge:
 
         CHALLENGE_NAME = 'MY CHALLENGE'
 
+        # optional
         def build(self):
             # Do build....
             pass
@@ -221,6 +224,7 @@ properties. This property can be accessed anywhere but must be declared on the `
                 'solved_attempts': 0
             }
 
+        # optional
         def build(self):
             # Do build....
             pass
@@ -275,6 +279,7 @@ If the function does take a lot to execute or does require background processing
                 ########### Stop the periodic function ##########
                 self.my_checker.stop()
 
+        # optional
         def build(self):
             # Do build....
             pass

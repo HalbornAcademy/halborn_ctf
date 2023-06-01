@@ -20,6 +20,7 @@ Minimal template:
         PATH_MAPPING = {
         }
 
+        # optional
         def build(self):
             pass
 
@@ -31,26 +32,6 @@ Minimal template:
 
         def files(self):
             pass
-
-
-ETH
-----------------------
-
-
-Installing forge
-^^^^^^^^^^^^^^^^
-
-.. code::
-
-    import halborn_ctf.shell as shell
-
-    ...
-
-        def build(self):
-            shell.run('curl -L https://foundry.paradigm.xyz | bash', env={"FOUNDRY_DIR": '/usr'})
-            shell.run('foundryup', env={"FOUNDRY_DIR": '/usr'})
-
-    ...
 
 
 Filtering
