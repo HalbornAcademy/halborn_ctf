@@ -8,6 +8,7 @@ Creating a challenge consists on the following steps:
     # challenge.py
     class Challenge(ChallengeGeneric):
 
+        # Optional
         def build(self):
             pass
 
@@ -123,7 +124,7 @@ class GenericChallenge(ABC):
     """Generic CTF challenge template
 
     Each created/deployed challenge does have two steps defined, :obj:`build` and :obj:`run`. The ``build`` step is only executed once
-    when the challenge is created and uploaded into the platform for playing. The ``run`` step is always executed for each player request
+    when the challenge is created and uploaded into the platform for playing and it is optional. The ``run`` step is always executed for each player request
     to deploy a new challenge.
 
     This template does also expose the challenge by using an HTTP server. The server does allow registering routes to it by using
@@ -665,7 +666,6 @@ class GenericChallenge(ABC):
             self._flask_run()
 
 
-    @abstractmethod
     def build(self):
         """All the static funtionality that should be executed during the build phase of the challenge container. The running container will
         have everything executed here pre-bundled as this funcionality is only executed once for all running instances.
@@ -694,10 +694,6 @@ class Web3Challenge(GenericChallenge):
     FLAG_TYPE = FlagType.NONE
     HAS_SOLVER = True
     HAS_FILES = True
-
-    @abstractmethod
-    def build(self):
-        pass
 
     @abstractmethod
     def run(self):
