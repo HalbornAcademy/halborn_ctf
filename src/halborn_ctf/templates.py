@@ -87,7 +87,7 @@ class MappingInfo(TypedDict):
     """ (list[str], optional): The allowed methods. Defaults to ``["GET"]``.
     """
     filter: Callable
-    """ (Callable, optional): One of the valid built-in filters or a generic_filter function. 
+    """ (Callable, optional): One of the valid built-in filters or a generic_filter function.
     """
 
 class FlagType(Enum):
@@ -577,6 +577,43 @@ class GenericChallenge(ABC):
                 self._app.add_url_rule(path, 'mapping-{}'.format(i), self._generic_path_handler(port=random_port, host='127.0.0.1', path=path), methods=methods)
             else:
                 self._app.add_url_rule(path, 'mapping-{}'.format(i), self._generic_path_handler(port=port, host=host, path=path), methods=methods)
+
+    def register_path(self, path, handler, methods=['GET']):
+        """ It does allow to define a custom flask endpoint for your challenge without a service to redirect to using the
+        standard :obj:`PATH_MAPPING`.
+
+            Example::
+
+                def __init__(self) -> None:
+                    super().__init__()
+
+                    self.state = {
+                        'name': 'The name'
+                    }
+
+                def custom_handler(self):
+                    return "HELLO {}".format(self.state.name)
+
+                def run(self):
+                    self.register_path('/', self.custom_handler, methods=['GET'])
+
+        Note:
+            You can even provide REST parameters to the path and access them on the handler:
+
+            Example::
+
+                def custom_handler(self, id):
+                    return "HELLO {}".format(id)
+
+                def run(self):
+                    self.register_path('/<id>', self.custom_handler, methods=['GET'])
+
+            Reference: https://pythonbasics.org/flask-tutorial-routes/
+
+        Tip:
+            You can access the request body by importing ``from flask import request``.
+        """
+        self._app.add_url_rule(path, 'mapping-{}'.format(handler.__name__), handler, methods)
 
     def _flask_run(self):
         cli = sys.modules['flask.cli']
