@@ -254,17 +254,26 @@ class GenericChallenge(ABC):
 
         A request to http://challenge/ will be proxied to http://127.0.0.1:8545/
 
-        Redirect all request to the service running on port ``9999`` and under ``/service``::
+        Redirect all request to the service running on port ``9999`` and under ``/service``. To catch all paths and redirect to the service you need to specify both, the `/` and `/<path:path>` rules::
+
+            # rule1: A request to http://challenge/
+            #        will be proxied to http://127.0.0.1:9999/service.
+            #
+            # rule2: A request to http://challenge/my_path/file
+            #        will be proxied to http://127.0.0.1:9999/service/my_path/file.
 
             PATH_MAPPING = {
+                '/': {
+                        'port': 9999,
+                        'path': '/service',
+                        'methods': ['GET', 'POST', 'HEAD']
+                },
                 '/<path:path>': {
                         'port': 9999,
                         'path': '/service',
                         'methods': ['GET', 'POST', 'HEAD']
                 }
             }
-
-        A request to http://challenge/my_path/file will be proxied to http://127.0.0.1:9999/service/my_path/file. But not http://challenge/.
 
         It allows to use filters::
 

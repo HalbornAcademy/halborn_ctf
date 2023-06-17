@@ -149,6 +149,8 @@ internal services and expose them on the challenge server you must define a path
 
         CHALLENGE_NAME = 'MY CHALLENGE'
 
+        # To catch all paths and redirect to the service you need to specify both, the `/` and `/<path:path>` rules:
+
         # rule1: A request to http://challenge/ will be proxied to http://127.0.0.1:9999/.
         # rule2: A request to http://challenge/my_path/file will be proxied to http://127.0.0.1:9999/my_path/file.
 
