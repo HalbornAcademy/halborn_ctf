@@ -141,7 +141,7 @@ def main(list_args):
             for container in client.containers.list():
                 if container.attrs['Config']['Image'] == IMAGE_NAME:
                     container.kill()
-            _container = client.containers.run(IMAGE_NAME, ports={'8080': '8080'}, detach=True, stderr=True, command=list_args + ['--local'])
+            _container = client.containers.run(IMAGE_NAME, ports={'8080': '8080'}, detach=True, stderr=True, command=['local'] + list_args[1:])
             try:
                 for line in _container.logs(stream=True):
                     print(line.decode('utf-8'), end='')
