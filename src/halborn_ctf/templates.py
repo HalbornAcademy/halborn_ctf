@@ -618,7 +618,7 @@ class GenericChallenge(ABC):
         """
         self._app.add_url_rule(path, 'mapping-{}'.format(handler.__name__), handler, methods)
 
-    def _flask_run(self):
+    def _server(self):
         cli = sys.modules['flask.cli']
         cli.show_server_banner = lambda *x: None
 
@@ -628,7 +628,11 @@ class GenericChallenge(ABC):
 
         self._app.after_request(self.on_request)
 
-        self._app.run(host='0.0.0.0', port=os.environ.get('PORT', 8080), use_reloader=False, debug=False)
+        _port = os.environ.get('PORT', 8080)
+        self.log.warning('===========================================')
+        self.log.warning('Starting challenge server on 0.0.0.0:{}'.format(_port))
+        self.log.warning('===========================================')
+        self._app.run(host='0.0.0.0', port=_port, use_reloader=False, debug=False)
 
     def on_request(self, response):
         if '200' in response.status:
@@ -690,7 +694,7 @@ class GenericChallenge(ABC):
 
             # TODO: Try to run in on a thread and start it before the self.run function. This will allow to notify the ready state
             # in case a backgroun process is not specified as background.
-            self._flask_run()
+            self._server()
 
 
     # def build(self):
