@@ -626,6 +626,9 @@ class GenericChallenge(ABC):
         log.level = logging.WARNING
         # log.disabled = True
 
+        logging.getLogger("requests").setLevel(logging.WARNING)
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
+
         self._app.after_request(self.on_request)
 
         _port = os.environ.get('PORT', 8080)
