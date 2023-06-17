@@ -43,10 +43,8 @@ Over an empty folder type the following command:
 
     # Your build commands
 
-    RUN halborn_ctf build --local
-
     ENTRYPOINT ["halborn_ctf"]
-    CMD ["local"]
+    CMD ["run", "--local"]
 
 .. code-block:: console
 
@@ -115,7 +113,7 @@ By default the challenge will expose the following routes:
 
 
 .. tip::
-    If you have all the dependencies on your local system and want to play the challenge locally you can always use:
+    If you have all the dependencies on your local system and want to play the challenge locally you can always use (this allows you to develop the challenge without having to ``build`` the container):
 
     .. code-block:: console
 
