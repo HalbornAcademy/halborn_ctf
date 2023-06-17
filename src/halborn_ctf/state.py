@@ -77,46 +77,46 @@ class State(dict):
     def _setattr(self, key, value):
         super().__setitem__(key, value)
 
-    def _merge(self, source):
-        _merge(source, self, exists_only=False)
+    # def _merge(self, source):
+    #     _merge(source, self, exists_only=False)
 
-    def udpate(self, source):
-        """ Does allow updating an state recursively with another dictionary
+    # def udpate(self, source):
+    #     """ Does allow updating an state recursively with another dictionary
 
-        Note:
-            All keys from the ``source`` must exist on the state.
+    #     Note:
+    #         All keys from the ``source`` must exist on the state.
 
-        Raises:
-            ValueError: If the key is not found on the state
+    #     Raises:
+    #         ValueError: If the key is not found on the state
 
-        Example:
-            It allows updating the current state with another dictionary::
+    #     Example:
+    #         It allows updating the current state with another dictionary::
 
-                state = State({
-                    'test': 'hi',
-                    'public': {
-                        'more': {
-                            'test': 'hi'
-                            }
-                        }
-                })
+    #             state = State({
+    #                 'test': 'hi',
+    #                 'public': {
+    #                     'more': {
+    #                         'test': 'hi'
+    #                         }
+    #                     }
+    #             })
 
-                print(state)
-                # {'test': 'hi', 'public': {'more': {'test': 'hi'}}}
+    #             print(state)
+    #             # {'test': 'hi', 'public': {'more': {'test': 'hi'}}}
 
-                state.update({
-                    'test': 'change',
-                    'public': {
-                        'more': {
-                            'test': 'bye'
-                        }
-                    }
-                })
+    #             state.update({
+    #                 'test': 'change',
+    #                 'public': {
+    #                     'more': {
+    #                         'test': 'bye'
+    #                     }
+    #                 }
+    #             })
 
-                print(state)
-                # {'test': 'change', 'public': {'more': {'test': 'bye'}}}
+    #             print(state)
+    #             # {'test': 'change', 'public': {'more': {'test': 'bye'}}}
 
-        Args:
-            source (dict): The dictionary to update with
-        """
-        _merge(source, self, exists_only=True)
+    #     Args:
+    #         source (dict): The dictionary to update with
+    #     """
+    #     _merge(source, self, exists_only=True)

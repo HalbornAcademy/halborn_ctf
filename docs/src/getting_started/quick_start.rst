@@ -10,15 +10,47 @@ Everything should be copy-pastable and work out of the box, given your
 .. contents::
    :local:
 
-Creating the challenge file
+Requirements
 ---------------------------
 
-Over an existing or empty folder with the files that are required by the challenge, create a ``challenge.py`` file with the following content:
+- ``halborn_ctf``
+- ``docker``
+
+
+Initializing the challenge
+---------------------------
+
+Over an empty folder type the following command:
+
+.. code-block:: console
+
+    $ halborn_ctf init
+
+.. code-block:: console
+
+    $ cat Dockefile
+
+.. code::
+
+    FROM python:3.11.2
+
+    RUN pip install halborn_ctf==0.1.11
+
+    # Your dependencies
+
+    COPY Dockerfile .
+    COPY challenge.py .
+
+    # Your build commands
+
+    RUN halborn_ctf build --local
+
+    ENTRYPOINT ["halborn_ctf"]
+    CMD ["local"]
 
 .. code-block:: console
 
     $ cat challenge.py
-
 
 .. code::
 
@@ -38,16 +70,26 @@ Over an existing or empty folder with the files that are required by the challen
             self.solved = True
 
 
-Check that the challenge can run (:mod:`halborn_ctf.templates.GenericChallenge.run`):
+Check that the challenge can build, this will compile the ``Dockerfile`` into a local image:
 
 .. code-block:: console
 
-    $ halborn_ctf run -vv
+    $ halborn_ctf build
 
-    2023-05-02 16:26:48 | root | __enter__ | INFO | pid=41948  pgid=41948
-    2023-05-02 16:26:48 | werkzeug | _log | INFO | WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+Check that the challenge can run (:mod:`halborn_ctf.templates.GenericChallenge.run`). This will run  the build
+image and expose the required ports:
+
+.. code-block:: console
+
+    $ halborn_ctf run -vvv
+
+    2023-06-17 16:05:58 | halborn_ctf.cli | main | WARNING | ============================
+    2023-06-17 16:05:58 | halborn_ctf.cli | main | WARNING | Logging level: DEBUG
+    2023-06-17 16:05:58 | halborn_ctf.cli | main | WARNING | ============================
+    2023-06-17 16:05:58 | root | __enter__ | INFO | pid=1  pgid=1
     * Running on all addresses (0.0.0.0)
     * Running on http://127.0.0.1:8080
+    * Running on http://172.17.0.3:8080
 
 
 You should see that a server has been spawned locally on port ``8080``.
@@ -72,37 +114,19 @@ By default the challenge will expose the following routes:
     If the function does take a lot to execute or does require background processing take a look at :ref:`periodic-solver`.
 
 
-If you need to execute common state to all players and you want to have it on the ``challenge.py`` file, you can use the (:mod:`halborn_ctf.templates.GenericChallenge.build`) function.
+.. tip::
+    If you have all the dependencies on your local system and want to play the challenge locally you can always use:
 
-.. code::
+    .. code-block:: console
 
-    from halborn_ctf.templates import GenericChallenge
+        $ halborn_ctf local -vvv
 
-    class Challenge(GenericChallenge):
+Creating the challenge
+----------------------
 
-        HAS_SOLVER = True
-
-        CHALLENGE_NAME = 'MY CHALLENGE'
-
-        def build(self):
-            # Do build....
-            pass
-
-        def run(self):
-            # Do deployment
-            pass
-
-        def solver(self):
-            self.solved = True
-
-You can now test that the challenge does build with (:mod:`halborn_ctf.templates.GenericChallenge.build`):
-
-.. code-block:: console
-
-    $ halborn_ctf build -vv
-      ...
-    $ halborn_ctf run -vv
-      ...
+You can now modify the template files to meat your challenge requirements. Keep in mind that everything inside
+the (:mod:`halborn_ctf.templates.GenericChallenge.run`) function will be executed for every new challenge instance. This means that long process
+actions should be included on the ``Dockerfile`` instead. The build phase will be caching all layers and speedup development.
 
 
 Service mapping

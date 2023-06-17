@@ -119,14 +119,13 @@ class StrFile():
 class GenericChallenge(ABC):
     """Generic CTF challenge template
 
-    Each created/deployed challenge does have two steps defined, :obj:`build` and :obj:`run`. The ``build`` step is only executed once
-    when the challenge is created and uploaded into the platform for playing and it is optional. The ``run`` step is always executed for each player request
+    Each created/deployed challenge does have a single steps named :obj:`run`. The ``run`` step is always executed for each player request
     to deploy a new challenge.
 
     This template does also expose the challenge by using an HTTP server. The server does allow registering routes to it by using
     the :obj:`PATH_MAPPING` attribute.
 
-    An attribute named :obj:`state` can be used to store any sort of object that will persiste between the ``build`` and ``run`` steps. Furthermore,
+    An attribute named :obj:`state` can be used to store any sort of object that will persiste between steps. Furthermore,
     this attribute can be used to store anything that would be used across the different functions. The `state_public` property will be exposed
     under the `/info` path on the challenge domain.
 
@@ -399,8 +398,6 @@ class GenericChallenge(ABC):
     def state(self):
         """(State): Extended dictionary to store variables that can be accessed during challenge execution.
 
-        The challenge :obj:`build` step will pickle this variable for the :obj:`run` method to have the same state.
-
         Example:
             Initializing the state::
 
@@ -627,39 +624,39 @@ class GenericChallenge(ABC):
         if self.HAS_SOLVER:
             self._app.add_url_rule('/solved', 'solved', self._app_solved_handler, methods=['GET'])
 
-    def _build(self):
-        with _CleanChildProcesses():
-            self.build()
+    # def _build(self):
+    #     with _CleanChildProcesses():
+    #         self.build()
 
-            try:
-                f = open('/tmp/state.dump', 'bw')
-                pickle.dump(self._state, f)
-            except:
-                pass
+    #         try:
+    #             f = open('/tmp/state.dump', 'bw')
+    #             pickle.dump(self._state, f)
+    #         except:
+    #             pass
 
-            try:
-                f = open('/tmp/state_public.dump', 'bw')
-                pickle.dump(self._state_public, f)
-            except:
-                pass
+    #         try:
+    #             f = open('/tmp/state_public.dump', 'bw')
+    #             pickle.dump(self._state_public, f)
+    #         except:
+    #             pass
 
     def _run(self):
         with _CleanChildProcesses():
 
-            try:
-                f = open('/tmp/state.dump', 'br')
-                tmp = pickle.load(f)
-                self._state._merge(tmp)
-            except:
-                pass
+            # try:
+            #     f = open('/tmp/state.dump', 'br')
+            #     tmp = pickle.load(f)
+            #     self._state._merge(tmp)
+            # except:
+            #     pass
 
-            try:
-                f = open('/tmp/state_public.dump', 'br')
-                # TODO: Do a merge instead of replace
-                tmp = pickle.load(f)
-                self._state_public._merge(tmp)
-            except:
-                pass
+            # try:
+            #     f = open('/tmp/state_public.dump', 'br')
+            #     # TODO: Do a merge instead of replace
+            #     tmp = pickle.load(f)
+            #     self._state_public._merge(tmp)
+            # except:
+            #     pass
 
             self._register_flask_paths()
 
@@ -674,15 +671,15 @@ class GenericChallenge(ABC):
             self._flask_run()
 
 
-    def build(self):
-        """All the static funtionality that should be executed during the build phase of the challenge container. The running container will
-        have everything executed here pre-bundled as this funcionality is only executed once for all running instances.
+    # def build(self):
+    #     """All the static funtionality that should be executed during the build phase of the challenge container. The running container will
+    #     have everything executed here pre-bundled as this funcionality is only executed once for all running instances.
 
-        NOTE:
-            At the end of the execution of this function all processes will be killed. Any dynamic funcionality or any code that should be depended to each deployment, dynamic keys, dynamic accounts... should be inserted into
-            :obj:`run` instead.
-        """
-        pass
+    #     NOTE:
+    #         At the end of the execution of this function all processes will be killed. Any dynamic funcionality or any code that should be depended to each deployment, dynamic keys, dynamic accounts... should be inserted into
+    #         :obj:`run` instead.
+    #     """
+    #     pass
 
     @abstractmethod
     def run(self):

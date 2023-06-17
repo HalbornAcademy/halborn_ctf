@@ -37,18 +37,15 @@ def _parse_args(args):
       :obj:`argparse.Namespace`: command line parameters namespace
     """
     parent_parser = argparse.ArgumentParser(description="Just a Fibonacci demonstration", add_help=False)
-    parent_parser.add_argument(
-        "--version",
-        action="version",
-        version=f"halborn_ctf {__version__}",
-    )
     parent_parser.add_argument("-c", "--class", help="The name of the class in the file to use", default="Challenge", metavar='class')
-    parent_parser.add_argument('--local', action='store_true', help="Runs the challenge locally instead of a container")
+    # parent_parser.add_argument('--local', action='store_true', help="Runs the challenge locally instead of a container")
     parent_parser.add_argument("-f", "--file", help="File path", default="./challenge.py")
-    parent_parser.add_argument('--verbose', '-v', action='count', default=0)
+    parent_parser.add_argument('--verbose', '-v', action='count', default=0, help="Level of verbosity")
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest='method', help='Methods', required=True)
+
+    local_parser = subparsers.add_parser('local', help='Runs the challenge locally', parents=[parent_parser])
 
     run_parser = subparsers.add_parser('run', help='Runs the challenge', parents=[parent_parser])
 
@@ -57,6 +54,12 @@ def _parse_args(args):
 
     init_parser = subparsers.add_parser('init', help='Allows to use challenge templates', parents=[parent_parser])
     init_parser.add_argument('-t',"--template", help="The name of the template to use", default="generic")
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"halborn_ctf {__version__}",
+    )
 
     return parser.parse_args(args)
 
@@ -74,22 +77,21 @@ def _setup_logging(loglevel):
     )
 
 
-def main(str_args):
+def main(list_args):
     """Wrapper allowing any method to be called on a given module/class provided via arguments in a CLI fashion
 
     Args:
-      args (List[str]): command line parameters as list of strings.
+      list_args (List[str]): command line parameters as list of strings.
 
     """
-    args = _parse_args(str_args)
+    args = _parse_args(list_args)
 
     if args.method == 'init':
         if os.listdir('.'):
             print('Folder not empty')
         else:
             generate(args.template)
-    else:
-        if args.local:
+    elif args.method == 'local':
 
             abs_path = os.path.abspath(args.file)
             module_name = os.path.splitext(os.path.basename(abs_path))[0]
@@ -117,30 +119,34 @@ def main(str_args):
             # Initiation challenge
             c = _cls()
 
-            _method = getattr(c, '_'+args.method)
+            # _method = getattr(c, '_'+args.method)
+            _run_method = getattr(c, '_run')
 
             # Initiation method
-            _method()
-        else:
-            IMAGE_NAME = 'ctf-local'
-            client = docker.from_env()
-            if args.method == 'build':
-                b = client.api.build(path='.', tag=IMAGE_NAME, quiet=False, decode=True, nocache=args.no_cache)
-                for line in b:
-                    if 'error' in line:
-                       print(line['error'], end='')
-                    elif 'stream' in line:
-                        print(line['stream'], end='')
-                    else:
-                        print(line)
-            elif args.method == 'run':
-                # Kill old container
-                for container in client.containers.list():
-                    if container.attrs['Config']['Image'] == IMAGE_NAME:
-                        container.kill()
-                _container = client.containers.run(IMAGE_NAME, ports={'8080': '8080'}, detach=True, stderr=True, command=' '.join(str_args))
+            _run_method()
+    else:
+        IMAGE_NAME = 'ctf-local'
+        client = docker.from_env()
+        if args.method == 'build':
+            b = client.api.build(path='.', tag=IMAGE_NAME, quiet=False, decode=True, nocache=args.no_cache)
+            for line in b:
+                if 'error' in line:
+                    print(line['error'], end='')
+                elif 'stream' in line:
+                    print(line['stream'], end='')
+                else:
+                    print(line)
+        elif args.method == 'run':
+            # Kill old container
+            for container in client.containers.list():
+                if container.attrs['Config']['Image'] == IMAGE_NAME:
+                    container.kill()
+            _container = client.containers.run(IMAGE_NAME, ports={'8080': '8080'}, detach=True, stderr=True, command=list_args + ['--local'])
+            try:
                 for line in _container.logs(stream=True):
                     print(line.decode('utf-8'), end='')
+            except:
+                _container.kill()
 
 
 def run():

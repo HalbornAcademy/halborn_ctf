@@ -9,7 +9,5 @@ COPY challenge.py .
 
 # Your build commands
 
-RUN halborn_ctf build --local
-
 ENTRYPOINT ["halborn_ctf"]
-CMD ["run", "--local"]
+CMD ["local"]
