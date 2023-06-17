@@ -38,16 +38,16 @@ def _parse_args(args):
     """
     parent_parser = argparse.ArgumentParser(description="Just a Fibonacci demonstration", add_help=False)
     parent_parser.add_argument("-c", "--class", help="The name of the class in the file to use", default="Challenge", metavar='class')
-    # parent_parser.add_argument('--local', action='store_true', help="Runs the challenge locally instead of a container")
     parent_parser.add_argument("-f", "--file", help="File path", default="./challenge.py")
     parent_parser.add_argument('--verbose', '-v', action='count', default=0, help="Level of verbosity")
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest='method', help='Methods', required=True)
 
-    local_parser = subparsers.add_parser('local', help='Runs the challenge locally', parents=[parent_parser])
+    # local_parser = subparsers.add_parser('local', help='Runs the challenge locally', parents=[parent_parser])
 
     run_parser = subparsers.add_parser('run', help='Runs the challenge', parents=[parent_parser])
+    run_parser.add_argument('--local', action='store_true', help="Runs the challenge locally instead of a container")
 
     build_parser = subparsers.add_parser('build', help='Builds the challenge', parents=[parent_parser])
     build_parser.add_argument('--no-cache', action='store_true', help='Ignores the docker build cache')
@@ -91,8 +91,21 @@ def main(list_args):
             print('Folder not empty')
         else:
             generate(args.template)
-    elif args.method == 'local':
 
+    IMAGE_NAME = 'ctf-local'
+
+    if args.method == 'build':
+        client = docker.from_env()
+        _build_stream = client.api.build(path='.', tag=IMAGE_NAME, quiet=False, decode=True, nocache=args.no_cache)
+        for line in _build_stream:
+            if 'error' in line:
+                print(line['error'], end='')
+            elif 'stream' in line:
+                print(line['stream'], end='')
+            else:
+                print(line)
+    elif args.method == 'run':
+        if args.local:
             abs_path = os.path.abspath(args.file)
             module_name = os.path.splitext(os.path.basename(abs_path))[0]
             module_path = os.path.dirname(abs_path)
@@ -124,24 +137,13 @@ def main(list_args):
 
             # Initiation method
             _run_method()
-    else:
-        IMAGE_NAME = 'ctf-local'
-        client = docker.from_env()
-        if args.method == 'build':
-            b = client.api.build(path='.', tag=IMAGE_NAME, quiet=False, decode=True, nocache=args.no_cache)
-            for line in b:
-                if 'error' in line:
-                    print(line['error'], end='')
-                elif 'stream' in line:
-                    print(line['stream'], end='')
-                else:
-                    print(line)
-        elif args.method == 'run':
+        else:
+            client = docker.from_env()
             # Kill old container
             for container in client.containers.list():
                 if container.attrs['Config']['Image'] == IMAGE_NAME:
                     container.kill()
-            _container = client.containers.run(IMAGE_NAME, ports={'8080': '8080'}, detach=True, stderr=True, command=['local'] + list_args[1:])
+            _container = client.containers.run(IMAGE_NAME, ports={'8080': '8080'}, detach=True, stderr=True, command=list_args + ['--local'])
             try:
                 for line in _container.logs(stream=True):
                     print(line.decode('utf-8'), end='')

@@ -81,7 +81,7 @@ image and expose the required ports:
 
 .. code-block:: console
 
-    $ halborn_ctf run -vvv
+    $ halborn_ctf run -vv
 
     2023-06-17 16:05:58 | halborn_ctf.cli | main | WARNING | ============================
     2023-06-17 16:05:58 | halborn_ctf.cli | main | WARNING | Logging level: DEBUG
@@ -119,7 +119,7 @@ By default the challenge will expose the following routes:
 
     .. code-block:: console
 
-        $ halborn_ctf local -vvv
+        $ halborn_ctf run --local -vv
 
 Creating the challenge
 ----------------------
