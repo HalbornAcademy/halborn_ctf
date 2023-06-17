@@ -613,7 +613,20 @@ class GenericChallenge(ABC):
         cli = sys.modules['flask.cli']
         cli.show_server_banner = lambda *x: None
 
+        log = logging.getLogger('werkzeug')
+        log.level = logging.WARNING
+        # log.disabled = True
+
+        self._app.after_request(self.on_request)
+
         self._app.run(host='0.0.0.0', port=os.environ.get('PORT', 8080), use_reloader=False, debug=False)
+
+    def on_request(self, response):
+        if '200' in response.status:
+            self.log.info('%s %s %s %s %s', request.remote_addr, request.method, request.scheme, request.full_path, response.status)
+        else:
+            self.log.error('%s %s %s %s %s', request.remote_addr, request.method, request.scheme, request.full_path, response.status)
+        return response
 
     #######################################
 

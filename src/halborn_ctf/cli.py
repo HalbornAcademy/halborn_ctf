@@ -63,6 +63,28 @@ def _parse_args(args):
 
     return parser.parse_args(args)
 
+class CustomFormatter(logging.Formatter):
+
+    grey = "\x1b[38;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+    # format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+    logformat = "%(asctime)s | %(name)-15.15s | %(funcName)-10.10s | %(levelname)-10.10s | %(message)s"
+
+    FORMATS = {
+        logging.DEBUG: grey + logformat + reset,
+        logging.INFO: grey + logformat + reset,
+        logging.WARNING: yellow + logformat + reset,
+        logging.ERROR: red + logformat + reset,
+        logging.CRITICAL: bold_red + logformat + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
 
 def _setup_logging(loglevel):
     """Setup basic logging
@@ -70,12 +92,15 @@ def _setup_logging(loglevel):
     Args:
       loglevel (int): minimum loglevel for emitting messages
     """
-    # logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    logformat = "%(asctime)s | %(name)s | %(funcName)s | %(levelname)s | %(message)s"
-    logging.basicConfig(
-        level=loglevel, stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    sh = logging.StreamHandler()
+    sh.setFormatter(CustomFormatter())
 
+    logging.basicConfig(
+        level=loglevel, datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[
+            sh
+        ]
+    )
 
 def main(list_args):
     """Wrapper allowing any method to be called on a given module/class provided via arguments in a CLI fashion
