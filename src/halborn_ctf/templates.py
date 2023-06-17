@@ -631,23 +631,35 @@ class GenericChallenge(ABC):
         with _CleanChildProcesses():
             self.build()
 
-            f = open('/tmp/state.dump', 'bw')
-            pickle.dump(self._state, f)
+            try:
+                f = open('/tmp/state.dump', 'bw')
+                pickle.dump(self._state, f)
+            except:
+                pass
 
-            f = open('/tmp/state_public.dump', 'bw')
-            pickle.dump(self._state_public, f)
+            try:
+                f = open('/tmp/state_public.dump', 'bw')
+                pickle.dump(self._state_public, f)
+            except:
+                pass
 
     def _run(self):
         with _CleanChildProcesses():
 
-            f = open('/tmp/state.dump', 'br')
-            tmp = pickle.load(f)
-            self._state._merge(tmp)
+            try:
+                f = open('/tmp/state.dump', 'br')
+                tmp = pickle.load(f)
+                self._state._merge(tmp)
+            except:
+                pass
 
-            f = open('/tmp/state_public.dump', 'br')
-            # TODO: Do a merge instead of replace
-            tmp = pickle.load(f)
-            self._state_public._merge(tmp)
+            try:
+                f = open('/tmp/state_public.dump', 'br')
+                # TODO: Do a merge instead of replace
+                tmp = pickle.load(f)
+                self._state_public._merge(tmp)
+            except:
+                pass
 
             self._register_flask_paths()
 

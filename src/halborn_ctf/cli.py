@@ -9,15 +9,16 @@ import argparse
 import logging
 import sys
 import os
+import docker
 
 from halborn_ctf import __version__
+from halborn_ctf.generator import generate
 
 __author__ = "ferran.celades"
 __copyright__ = "ferran.celades"
 __license__ = "MIT"
 
 _logger = logging.getLogger(__name__)
-
 
 # ---- CLI ----
 # The functions defined in this section are wrappers around the main Python
@@ -35,32 +36,28 @@ def _parse_args(args):
     Returns:
       :obj:`argparse.Namespace`: command line parameters namespace
     """
-    parser = argparse.ArgumentParser(description="Just a Fibonacci demonstration")
-    parser.add_argument(
+    parent_parser = argparse.ArgumentParser(description="Just a Fibonacci demonstration", add_help=False)
+    parent_parser.add_argument(
         "--version",
         action="version",
         version=f"halborn_ctf {__version__}",
     )
-    parser.add_argument(dest="method", help="The method to run on the challenge", type=str, metavar="METHOD", choices=['build', 'run'])
-    # parser.add_argument(dest="file", help="The file where the challenge is present", type=str, metavar="FILE")
-    parser.add_argument("-c", "--class", help="Class name", default="Challenge", metavar='class')
-    parser.add_argument("-f", "--file", help="File path", default="./challenge.py")
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        dest="loglevel",
-        help="set loglevel to INFO",
-        action="store_const",
-        const=logging.INFO,
-    )
-    parser.add_argument(
-        "-vv",
-        "--debug",
-        dest="loglevel",
-        help="set loglevel to DEBUG",
-        action="store_const",
-        const=logging.DEBUG,
-    )
+    parent_parser.add_argument("-c", "--class", help="The name of the class in the file to use", default="Challenge", metavar='class')
+    parent_parser.add_argument('--local', action='store_true', help="Runs the challenge locally instead of a container")
+    parent_parser.add_argument("-f", "--file", help="File path", default="./challenge.py")
+    parent_parser.add_argument('--verbose', '-v', action='count', default=0)
+
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest='method', help='Methods', required=True)
+
+    run_parser = subparsers.add_parser('run', help='Runs the challenge', parents=[parent_parser])
+
+    build_parser = subparsers.add_parser('build', help='Builds the challenge', parents=[parent_parser])
+    build_parser.add_argument('--no-cache', action='store_true', help='Ignores the docker build cache')
+
+    init_parser = subparsers.add_parser('init', help='Allows to use challenge templates', parents=[parent_parser])
+    init_parser.add_argument('-t',"--template", help="The name of the template to use", default="generic")
+
     return parser.parse_args(args)
 
 
@@ -77,33 +74,73 @@ def _setup_logging(loglevel):
     )
 
 
-def main(args):
+def main(str_args):
     """Wrapper allowing any method to be called on a given module/class provided via arguments in a CLI fashion
 
     Args:
       args (List[str]): command line parameters as list of strings.
 
     """
-    args = _parse_args(args)
-    abs_path = os.path.abspath(args.file)
-    module_name = os.path.splitext(os.path.basename(abs_path))[0]
-    module_path = os.path.dirname(abs_path)
+    args = _parse_args(str_args)
 
-    sys.path.append(module_path)
+    if args.method == 'init':
+        if os.listdir('.'):
+            print('Folder not empty')
+        else:
+            generate(args.template)
+    else:
+        if args.local:
 
-    module = __import__(module_name)
+            abs_path = os.path.abspath(args.file)
+            module_name = os.path.splitext(os.path.basename(abs_path))[0]
+            module_path = os.path.dirname(abs_path)
 
-    _cls = getattr(module, getattr(args, 'class'))
+            sys.path.append(module_path)
 
-    _setup_logging(args.loglevel)
+            module = __import__(module_name)
 
-    # Initiation challenge
-    c = _cls()
+            _cls = getattr(module, getattr(args, 'class'))
 
-    _method = getattr(c, '_'+args.method)
+            levels = [
+                (logging.WARNING, 'WARNING'),
+                (logging.INFO, 'INFO'),
+                (logging.DEBUG, 'DEBUG')
+            ]
 
-    # Initiation method
-    _method()
+            _level,_level_name = levels[min(args.verbose, len(levels) - 1)]
+
+            _setup_logging(_level)
+            _logger.warning('============================')
+            _logger.warning('Logging level: {}'.format(_level_name))
+            _logger.warning('============================')
+
+            # Initiation challenge
+            c = _cls()
+
+            _method = getattr(c, '_'+args.method)
+
+            # Initiation method
+            _method()
+        else:
+            IMAGE_NAME = 'ctf-local'
+            client = docker.from_env()
+            if args.method == 'build':
+                b = client.api.build(path='.', tag=IMAGE_NAME, quiet=False, decode=True, nocache=args.no_cache)
+                for line in b:
+                    if 'error' in line:
+                       print(line['error'], end='')
+                    elif 'stream' in line:
+                        print(line['stream'], end='')
+                    else:
+                        print(line)
+            elif args.method == 'run':
+                # Kill old container
+                for container in client.containers.list():
+                    if container.attrs['Config']['Image'] == IMAGE_NAME:
+                        container.kill()
+                _container = client.containers.run(IMAGE_NAME, ports={'8080': '8080'}, detach=True, stderr=True, command=' '.join(str_args))
+                for line in _container.logs(stream=True):
+                    print(line.decode('utf-8'), end='')
 
 
 def run():
@@ -116,8 +153,8 @@ def run():
         - ``[METHOD]``: The method to execute. Only 'build' and 'run' are allowed. Valids are ``build, run``.
         - ``-f/--file``: The file where the class/function is present. Defaults to ``"./challenge.py"``.
         - ``-c/--class``: The class where the method is found. Defaults to ``"Challenge"``.
-        - ``-v/--verbose``: Verbose (INFO).
-        - ``-vv/--debug``: Verbose (DEBUG).
+        - ``-v``: Verbose (INFO).
+        - ``-vv``: Verbose (DEBUG).
 
     Example:
         Executing method ``run`` from the ``challenge.py`` file and the class named ``Challenge`` in debug mode::

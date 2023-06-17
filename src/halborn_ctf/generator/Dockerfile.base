@@ -1,0 +1,15 @@
+FROM python:{{PYTHON_VERSION}}
+
+RUN pip install halborn_ctf=={{HALBORN_CTF_VERSION}}
+
+# Your dependencies
+
+COPY Dockerfile .
+COPY challenge.py .
+
+# Your build commands
+
+RUN halborn_ctf build --local
+
+ENTRYPOINT ["halborn_ctf"]
+CMD ["run", "--local"]
