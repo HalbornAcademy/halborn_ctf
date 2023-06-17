@@ -9,7 +9,7 @@ import argparse
 import logging
 import sys
 import os
-import docker
+from python_on_whales import docker
 
 from halborn_ctf import __version__
 from halborn_ctf.generator import generate
@@ -120,15 +120,7 @@ def main(list_args):
     IMAGE_NAME = 'ctf-local'
 
     if args.method == 'build':
-        client = docker.from_env()
-        _build_stream = client.api.build(path='.', tag=IMAGE_NAME, quiet=False, decode=True, nocache=args.no_cache)
-        for line in _build_stream:
-            if 'error' in line:
-                print(line['error'], end='')
-            elif 'stream' in line:
-                print(line['stream'], end='')
-            else:
-                print(line)
+        docker.build('.', tags=IMAGE_NAME, cache=(not args.no_cache))
     elif args.method == 'run':
         if args.local:
             abs_path = os.path.abspath(args.file)
@@ -163,17 +155,11 @@ def main(list_args):
             # Initiation method
             _run_method()
         else:
-            client = docker.from_env()
-            # Kill old container
-            for container in client.containers.list():
-                if container.attrs['Config']['Image'] == IMAGE_NAME:
+            for container in docker.container.list():
+                if container.config.image == IMAGE_NAME:
                     container.kill()
-            _container = client.containers.run(IMAGE_NAME, ports={'8080': '8080'}, detach=True, stderr=True, command=list_args + ['--local'])
-            try:
-                for line in _container.logs(stream=True):
-                    print(line.decode('utf-8'), end='')
-            except:
-                _container.kill()
+
+            docker.run(IMAGE_NAME, publish=[('8080','8080')], detach=False, command=list_args + ['--local'])
 
 
 def run():
