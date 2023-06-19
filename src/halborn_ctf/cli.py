@@ -159,7 +159,7 @@ def main(list_args):
                 if container.config.image == IMAGE_NAME:
                     container.kill()
 
-            docker.run(IMAGE_NAME, publish=[('8080','8080')], detach=False, command=list_args + ['--local'], envs={'FLAG': 'HALBORN{DYNAMIC}'})
+            docker.run(IMAGE_NAME, publish=[('8080','8080')], detach=False, command=list_args + ['--local'], envs={'FLAG': 'DYNAMIC_FLAG'})
 
 
 def run():
